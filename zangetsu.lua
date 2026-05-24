@@ -28,6 +28,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -51,9 +52,11 @@ local LOADER = 'loadstring(game:HttpGet("' .. HUB_SCRIPT_URL .. '"))()'
 --   RETURN TO LOBBY LOGIC
 -- ========================
 
+local LOBBY_PLACE_ID = 6933311135 -- AOT:R Town Central/Lobby Place ID
+
 local function ReturnToLobby()
 	local success, err = pcall(function()
-		-- Try common remote names for AOT:R and similar games
+		-- Try remote first (works if in lobby or if remote exists)
 		local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 		if remotes then
 			local returnRemote = remotes:FindFirstChild("ReturnToLobby")
@@ -74,12 +77,135 @@ local function ReturnToLobby()
 			end
 		end
 		
-		-- Fallback: teleport to same place (respawns you at lobby/town central)
-		TeleportService:Teleport(game.PlaceId, LocalPlayer)
+		-- Fallback: Force teleport to lobby place (works from missions/raids)
+		Library:Notify({ Title = "Return to Lobby", Description = "Teleporting to Town Central...", Time = 3 })
+		TeleportService:Teleport(LOBBY_PLACE_ID, LocalPlayer)
 	end)
 	
 	if not success then
 		Library:Notify({ Title = "Error", Description = "Failed to return to lobby: " .. tostring(err), Time = 4 })
+	end
+end
+
+-- ========================
+--   SHADOWBAN CHECKER
+-- ========================
+
+local function CheckShadowBan()
+	local isBanned = false
+	local reasons = {}
+
+	-- 1. Check player attributes (most common for silent flags)
+	for attrName, attrValue in pairs(LocalPlayer:GetAttributes()) do
+		local lower = attrName:lower()
+		if lower:find("ban") or lower:find("shadow") or lower:find("mute") or lower:find("gift") or lower:find("trade") or lower:find("party") then
+			if attrValue == true or attrValue == "true" or attrValue == 1 or attrValue == "1" then
+				isBanned = true
+				table.insert(reasons, "Attr: " .. attrName)
+			end
+		end
+	end
+
+	-- 2. Check direct children of LocalPlayer
+	local banValues = { "ShadowBanned", "Banned", "IsBanned", "CanGift", "CanTrade", "CanJoinParty", "CanInvite", "SocialBanned" }
+	for _, valName in ipairs(banValues) do
+		local obj = LocalPlayer:FindFirstChild(valName)
+		if obj then
+			if obj:IsA("BoolValue") and obj.Value == true then
+				isBanned = true
+				table.insert(reasons, "Player." .. valName)
+			elseif obj:IsA("IntValue") and obj.Value ~= 0 then
+				isBanned = true
+				table.insert(reasons, "Player." .. valName)
+			elseif obj:IsA("StringValue") and (obj.Value:lower():find("ban") or obj.Value:lower():find("true")) then
+				isBanned = true
+				table.insert(reasons, "Player." .. valName)
+			end
+		end
+	end
+
+	-- 3. Deep scan ReplicatedStorage for player data (works anywhere)
+	local function ScanFolder(folder, path)
+		for _, child in ipairs(folder:GetChildren()) do
+			local childPath = path .. "/" .. child.Name
+			
+			-- Check if this is our player data
+			if child.Name == LocalPlayer.Name or child.Name == tostring(LocalPlayer.UserId) then
+				for _, valName in ipairs(banValues) do
+					local dataVal = child:FindFirstChild(valName)
+					if dataVal and dataVal:IsA("BoolValue") and dataVal.Value == true then
+						isBanned = true
+						table.insert(reasons, childPath .. "." .. valName)
+					end
+				end
+				
+				-- Also check attributes on the data folder
+				for attrName, attrValue in pairs(child:GetAttributes()) do
+					local lower = attrName:lower()
+					if lower:find("ban") or lower:find("shadow") or lower:find("mute") then
+						if attrValue == true or attrValue == "true" or attrValue == 1 then
+							isBanned = true
+							table.insert(reasons, childPath .. " attr:" .. attrName)
+						end
+					end
+				end
+			end
+			
+			-- Check for ban lists
+			local lowerName = child.Name:lower()
+			if lowerName:find("ban") or lowerName:find("shadow") or lowerName:find("moderation") or lowerName:find("punish") then
+				if child:IsA("Folder") or child:IsA("Configuration") then
+					if child:FindFirstChild(LocalPlayer.Name) or child:FindFirstChild(tostring(LocalPlayer.UserId)) then
+						isBanned = true
+						table.insert(reasons, "BanList:" .. child.Name)
+					end
+				end
+			end
+			
+			-- Recurse into folders (but not too deep to avoid lag)
+			if (child:IsA("Folder") or child:IsA("Configuration") or child:IsA("Model")) and #path < 50 then
+				ScanFolder(child, childPath)
+			end
+		end
+	end
+	
+	pcall(function()
+		ScanFolder(ReplicatedStorage, "RS")
+	end)
+
+	-- 4. Check PlayerGui for visible ban/warning text
+	local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+	if playerGui then
+		for _, gui in ipairs(playerGui:GetDescendants()) do
+			if gui:IsA("TextLabel") or gui:IsA("TextButton") or gui:IsA("TextBox") then
+				local text = gui.Text:lower()
+				if (text:find("shadowban") or text:find("shadow ban") or text:find("banned") or text:find("restricted") or text:find("suspended")) and gui.Visible then
+					isBanned = true
+					table.insert(reasons, "GUI warning")
+					break
+				end
+			end
+		end
+	end
+
+	-- 5. Notify result
+	if isBanned then
+		local reasonStr = table.concat(reasons, ", ")
+		if #reasonStr > 100 then
+			reasonStr = reasonStr:sub(1, 97) .. "..."
+		end
+		
+		Library:Notify({
+			Title = "⚠️ Shadowban Checker",
+			Description = "SHADOW BANNED detected!\nYou cannot gift, join lobbies, or play with friends.\nFlags: " .. reasonStr,
+			Time = 10,
+		})
+	else
+		Library:Notify({
+			Title = "✅ Shadowban Checker",
+			Description = "No shadow ban detected.\nGifting, lobbies, and friends should work normally.",
+			Time = 4,
+		})
 	end
 end
 
@@ -403,7 +529,7 @@ local MapObjectives = {
 local MiscGroup = Tabs.Main:AddLeftGroupbox("Misc", "layout-grid")
 
 MiscGroup:AddButton({ Text = "Return to Lobby", Func = function() ReturnToLobby() end })
-MiscGroup:AddButton({ Text = "Check Shadow Ban (Lobby)", Func = function() end })
+MiscGroup:AddButton({ Text = "Shadowban Checker", Func = function() CheckShadowBan() end })
 MiscGroup:AddButton({ Text = "Join Discord", Func = function() end })
 
 local AutomationGroup = Tabs.Main:AddLeftGroupbox("Automation", "cpu")
