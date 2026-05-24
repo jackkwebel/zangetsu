@@ -53,21 +53,33 @@ local LOADER = 'loadstring(game:HttpGet("' .. HUB_SCRIPT_URL .. '"))()'
 
 local function ReturnToLobby()
 	local success, err = pcall(function()
+		-- Try common remote names for AOT:R and similar games
 		local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 		if remotes then
 			local returnRemote = remotes:FindFirstChild("ReturnToLobby")
 				or remotes:FindFirstChild("Return")
 				or remotes:FindFirstChild("BackToLobby")
 				or remotes:FindFirstChild("Lobby")
-			if returnRemote and returnRemote:IsA("RemoteEvent") then
-				returnRemote:FireServer()
+				or remotes:FindFirstChild("ToLobby")
+				or remotes:FindFirstChild("TeleportToLobby")
+			
+			if returnRemote and (returnRemote:IsA("RemoteEvent") or returnRemote:IsA("RemoteFunction")) then
+				if returnRemote:IsA("RemoteEvent") then
+					returnRemote:FireServer()
+				else
+					returnRemote:InvokeServer()
+				end
+				Library:Notify({ Title = "Return to Lobby", Description = "Teleporting to Town Central...", Time = 3 })
 				return
 			end
 		end
+		
+		-- Fallback: teleport to same place (respawns you at lobby/town central)
 		TeleportService:Teleport(game.PlaceId, LocalPlayer)
 	end)
+	
 	if not success then
-		Library:Notify({ Title = "Error", Description = "Failed to return to lobby!", Time = 4 })
+		Library:Notify({ Title = "Error", Description = "Failed to return to lobby: " .. tostring(err), Time = 4 })
 	end
 end
 
@@ -309,12 +321,10 @@ local renderConnection = nil
 local blackoutPart = nil
 
 local function Disable3DRendering()
-	-- 1. Native engine disable for actual FPS boost
 	pcall(function()
 		RunService:Set3dRenderingEnabled(false)
 	end)
 
-	-- 2. Visual blackout: massive black part locked in front of camera
 	if blackoutPart then blackoutPart:Destroy() end
 	if renderConnection then renderConnection:Disconnect() end
 
@@ -350,12 +360,10 @@ local function Disable3DRendering()
 end
 
 local function Enable3DRendering()
-	-- 1. Restore native rendering
 	pcall(function()
 		RunService:Set3dRenderingEnabled(true)
 	end)
 
-	-- 2. Remove blackout part
 	if renderConnection then
 		renderConnection:Disconnect()
 		renderConnection = nil
