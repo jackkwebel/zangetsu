@@ -321,6 +321,117 @@ ExtrasGroup:AddToggle("DeleteMap",         { Text = "Delete Map (FPS Boost)", De
 --    GLOBAL TAB (empty)
 -- ========================
 
+-- LEFT SIDE: Family Roll
+local FamilyRollGroup = Tabs.Global:AddLeftGroupbox("Family Roll", "dice-5")
+
+FamilyRollGroup:AddToggle("AutoRoll", {
+	Text = "Auto Roll",
+	Default = false,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+FamilyRollGroup:AddDropdown("SelectFamilies", {
+	Values = { "Yeager", "Ackerman", "Reiss", "Helos", "Fritz", "Shiki" },
+	Default = 1,
+	Multi = true,
+	Text = "Select Families",
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+FamilyRollGroup:AddDropdown("StopAt", {
+	Values = { "Legendary", "Mythic", "Secret" },
+	Default = 1,
+	Multi = true,
+	Text = "Stop At",
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+-- LEFT SIDE: AddOns
+local AddOnsGroup = Tabs.Global:AddLeftGroupbox("AddOns", "puzzle")
+
+AddOnsGroup:AddToggle("AutoHideGui", {
+	Text = "Auto Hide Gui",
+	Default = false,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+AddOnsGroup:AddToggle("AutoClaimAchievements", {
+	Text = "Auto Claim Achievements",
+	Default = false,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+AddOnsGroup:AddToggle("Disable3DRendering", {
+	Text = "Disable 3D Rendering",
+	Default = false,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+-- RIGHT SIDE: Webhook
+local WebhookGroup = Tabs.Global:AddRightGroupbox("Webhook", "webhook")
+
+WebhookGroup:AddToggle("RewardWebhook", {
+	Text = "Reward Webhook",
+	Default = false,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+WebhookGroup:AddToggle("MythicFamilyWebhook", {
+	Text = "Mythic Family Webhook",
+	Default = false,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+WebhookGroup:AddInput("WebhookURL", {
+	Text = "Webhook URL",
+	Default = "",
+	Placeholder = "https://discord.com/api/webhooks/...",
+	Numeric = false,
+	Finished = true,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+-- RIGHT SIDE: Level
+local LevelGroup = Tabs.Global:AddRightGroupbox("Level", "trending-up")
+
+LevelGroup:AddToggle("AutoPrestige", {
+	Text = "Auto Prestige",
+	Default = false,
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
+LevelGroup:AddSlider("PrestigeAt", {
+	Text = "Prestige at (millions)",
+	Default = 100,
+	Min = 1,
+	Max = 1000,
+	Rounding = 0,
+	Suffix = "M",
+	Callback = function(Value)
+		-- functionality later
+	end,
+})
+
 -- ========================
 --      SETTINGS TAB
 -- ========================
