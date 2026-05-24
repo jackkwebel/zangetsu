@@ -192,7 +192,7 @@ AutomationGroup:AddSlider("StartAfterXSeconds", {
 local MovementGroup = Tabs.Main:AddRightGroupbox("Movement", "move")
 
 MovementGroup:AddDropdown("MovementMode", {
-	Values = { "Teleport", "Fly" }, Default = 1, Multi = false, Text = "Movement Mode",
+	Values = { "Teleport", "Hover" }, Default = 1, Multi = false, Text = "Movement Mode",
 	Callback = function() end,
 })
 MovementGroup:AddSlider("HoverSpeed",  { Text = "Hover Speed",  Default = 400, Min = 0, Max = 500, Rounding = 0, Callback = function() end })
