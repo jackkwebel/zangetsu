@@ -27,6 +27,7 @@ local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -138,6 +139,234 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
 	if hrp then lastPosition = hrp.Position end
 	if Toggles.Failsafe.Value then ResetIdleTimer() end
 end)
+
+-- ========================
+--   DELETE MAP SYSTEM
+-- ========================
+
+local mapStorage = Instance.new("Folder")
+mapStorage.Name = "ZangetsuMapStorage"
+mapStorage.Parent = ReplicatedStorage
+
+local savedMapData = {}
+
+local mapKeywords = {
+	"wall", "house", "building", "tree", "rock", "ground", "terrain",
+	"map", "environment", "world", "decor", "detail", "structure",
+	"fence", "roof", "floor", "grass", "road", "path", "bridge",
+	"tower", "city", "village", "gate", "door", "window", "brick",
+	"concrete", "wood", "stone", "mountain", "hill", "water", "river",
+	"sky", "cloud", "fog", "leaf", "bush", "plant", "flower", "trunk",
+	"branch", "log", "stump", "crate", "box", "barrel", "container",
+	"cart", "wagon", "statue", "monument", "pillar", "column", "beam",
+	"support", "scaffold", "debris", "rubble", "ruin", "wreck"
+}
+
+local function IsCharacterOrNPC(obj)
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player.Character and obj:IsDescendantOf(player.Character) then
+			return true
+		end
+	end
+	if obj:IsA("Humanoid") then return true end
+	if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then return true end
+
+	local current = obj.Parent
+	while current and current ~= Workspace and current ~= game do
+		if current:IsA("Model") and current:FindFirstChildOfClass("Humanoid") then
+			return true
+		end
+		current = current.Parent
+	end
+	return false
+end
+
+local function IsInteractive(obj)
+	if obj:FindFirstChildOfClass("ClickDetector") then return true end
+	if obj:FindFirstChildOfClass("ProximityPrompt") then return true end
+	if obj:FindFirstChildOfClass("SurfaceGui") then return true end
+	if obj:FindFirstChildOfClass("BillboardGui") then return true end
+	if obj:FindFirstChildOfClass("Script") then return true end
+	if obj:FindFirstChildOfClass("LocalScript") then return true end
+	if obj:IsA("ClickDetector") or obj:IsA("ProximityPrompt") then return true end
+	if obj:IsA("Tool") or obj:IsA("HopperBin") then return true end
+	if obj:IsA("Script") or obj:IsA("LocalScript") then return true end
+	if obj:IsA("SurfaceGui") or obj:IsA("BillboardGui") then return true end
+	return false
+end
+
+local function ShouldDeleteMapObject(obj)
+	if IsCharacterOrNPC(obj) then return false end
+	if IsInteractive(obj) then return false end
+	if obj:IsA("Camera") then return false end
+	if obj:IsA("Terrain") then return false end
+
+	local name = obj.Name:lower()
+	for _, kw in ipairs(mapKeywords) do
+		if name:find(kw) then
+			return true
+		end
+	end
+
+	if obj:IsA("BasePart") and obj.Anchored and obj.Parent == Workspace then
+		if obj:FindFirstChildOfClass("Script") or obj:FindFirstChildOfClass("LocalScript") then
+			return false
+		end
+		return true
+	end
+
+	if obj:IsA("Model") and obj.Parent == Workspace then
+		return true
+	end
+
+	return false
+end
+
+local function DeleteMap()
+	local terrain = Workspace:FindFirstChildOfClass("Terrain")
+	if terrain then
+		pcall(function() terrain:Clear() end)
+	end
+
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj.Parent == nil then continue end
+		if savedMapData[obj] then continue end
+
+		local ancestorStored = false
+		for storedObj, _ in pairs(savedMapData) do
+			if obj:IsDescendantOf(storedObj) then
+				ancestorStored = true
+				break
+			end
+		end
+		if ancestorStored then continue end
+
+		if ShouldDeleteMapObject(obj) then
+			savedMapData[obj] = obj.Parent
+			pcall(function() obj.Parent = mapStorage end)
+		end
+	end
+
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj.Parent == nil then continue end
+		if savedMapData[obj] then continue end
+
+		local ancestorStored = false
+		for storedObj, _ in pairs(savedMapData) do
+			if obj:IsDescendantOf(storedObj) then
+				ancestorStored = true
+				break
+			end
+		end
+		if ancestorStored then continue end
+
+		if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam")
+		   or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles")
+		   or obj:IsA("Decal") or obj:IsA("Texture") then
+			if not IsCharacterOrNPC(obj) and not IsInteractive(obj) then
+				savedMapData[obj] = obj.Parent
+				pcall(function() obj.Parent = mapStorage end)
+			end
+		end
+	end
+
+	Library:Notify({
+		Title = "Delete Map",
+		Description = "Map hidden. Humans, titans & UI kept.",
+		Time = 3,
+	})
+end
+
+local function RestoreMap()
+	local restoredCount = 0
+	for obj, originalParent in pairs(savedMapData) do
+		if obj and obj.Parent == mapStorage then
+			local success = pcall(function()
+				if originalParent and originalParent.Parent then
+					obj.Parent = originalParent
+				else
+					obj.Parent = Workspace
+				end
+			end)
+			if success then restoredCount = restoredCount + 1 end
+		end
+	end
+
+	savedMapData = {}
+
+	Library:Notify({
+		Title = "Delete Map",
+		Description = "Map restored (" .. tostring(restoredCount) .. " objects).",
+		Time = 3,
+	})
+end
+
+-- ========================
+--   3D RENDERING SYSTEM
+-- ========================
+
+local renderConnection = nil
+local blackoutPart = nil
+
+local function Disable3DRendering()
+	-- 1. Native engine disable for actual FPS boost
+	pcall(function()
+		RunService:Set3dRenderingEnabled(false)
+	end)
+
+	-- 2. Visual blackout: massive black part locked in front of camera
+	if blackoutPart then blackoutPart:Destroy() end
+	if renderConnection then renderConnection:Disconnect() end
+
+	blackoutPart = Instance.new("Part")
+	blackoutPart.Name = "ZangetsuBlackout"
+	blackoutPart.Size = Vector3.new(500, 500, 1)
+	blackoutPart.Anchored = true
+	blackoutPart.CanCollide = false
+	blackoutPart.CastShadow = false
+	blackoutPart.Transparency = 0
+	blackoutPart.Color = Color3.new(0, 0, 0)
+	blackoutPart.Material = Enum.Material.SmoothPlastic
+	blackoutPart.Parent = Workspace
+
+	pcall(function()
+		blackoutPart.CanQuery = false
+	end)
+
+	renderConnection = RunService.RenderStepped:Connect(function()
+		if blackoutPart and blackoutPart.Parent then
+			local cam = workspace.CurrentCamera
+			if cam then
+				blackoutPart.CFrame = cam.CFrame * CFrame.new(0, 0, -10)
+			end
+		end
+	end)
+
+	Library:Notify({
+		Title = "3D Rendering",
+		Description = "Disabled. Screen blacked out.",
+		Time = 3,
+	})
+end
+
+local function Enable3DRendering()
+	-- 1. Restore native rendering
+	pcall(function()
+		RunService:Set3dRenderingEnabled(true)
+	end)
+
+	-- 2. Remove blackout part
+	if renderConnection then
+		renderConnection:Disconnect()
+		renderConnection = nil
+	end
+	if blackoutPart then
+		blackoutPart:Destroy()
+		blackoutPart = nil
+	end
+
+	Library:Notify({ Title = "3D Rendering", Description = "Restored.", Time = 3 })
+end
 
 -- ========================
 --        TABS
@@ -315,10 +544,16 @@ ExtrasGroup:AddToggle("DieAtStreak",       { Text = "Die at Streak",         Def
 ExtrasGroup:AddSlider("DieAtXStreak",      { Text = "Die at x streak", Default = 10000, Min = 5000, Max = 100000, Rounding = 0, Callback = function() end })
 ExtrasGroup:AddToggle("AutoOpenChests",    { Text = "Auto Open Chests",      Default = false, Callback = function() end })
 ExtrasGroup:AddToggle("AutoOpen2ndChest",  { Text = "Auto Open 2nd Chest",   Default = false, Callback = function() end })
-ExtrasGroup:AddToggle("DeleteMap",         { Text = "Delete Map (FPS Boost)", Default = false, Callback = function() end })
+ExtrasGroup:AddToggle("DeleteMap",         { Text = "Delete Map (FPS Boost)", Default = false, Callback = function(Value)
+	if Value then
+		DeleteMap()
+	else
+		RestoreMap()
+	end
+end })
 
 -- ========================
---    GLOBAL TAB (empty)
+--      GLOBAL TAB
 -- ========================
 
 -- LEFT SIDE: Family Roll
@@ -375,7 +610,11 @@ AddOnsGroup:AddToggle("Disable3DRendering", {
 	Text = "Disable 3D Rendering",
 	Default = false,
 	Callback = function(Value)
-		-- functionality later
+		if Value then
+			Disable3DRendering()
+		else
+			Enable3DRendering()
+		end
 	end,
 })
 
@@ -448,7 +687,6 @@ AutoExecGroup:AddToggle("AutoExecEnabled", {
 	Default = false,
 	Callback = function(Value)
 		if Value then
-			-- Only queue, don't re-execute now — we're already running
 			local ok = QueueOnTeleport(LOADER)
 			Library:Notify({
 				Title = "Auto Execute",
@@ -468,6 +706,10 @@ Library.ToggleKeybind = Options.MenuKeybind
 
 Library:OnUnload(function()
 	StopFailsafe()
+	if Toggles.DeleteMap and Toggles.DeleteMap.Value then
+		RestoreMap()
+	end
+	Enable3DRendering()
 	print("Unloaded!")
 end)
 
@@ -480,5 +722,3 @@ SaveManager:SetFolder("ZangetsuHub/AOT-R")
 SaveManager:BuildConfigSection(Tabs.Settings)
 ThemeManager:ApplyToTab(Tabs.Settings)
 SaveManager:LoadAutoloadConfig()
-
--- Auto Execute is handled entirely by the toggle callback above.
