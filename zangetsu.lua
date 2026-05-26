@@ -813,7 +813,7 @@ local Tabs = {
 local Options = {}
 
 -- ========================
---   CONFIG MANAGER ENGINE
+--   CONFIG MANAGER ENGINE  (BULLETPROOF)
 -- ========================
 
 local ConfigSystem = {}
@@ -821,25 +821,49 @@ ConfigSystem.Folder = "ZangetsuHub/Configs"
 ConfigSystem.AutoloadFile = "ZangetsuHub/autoload_config.txt"
 
 function ConfigSystem:EnsureFolder()
-	if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
-	if not isfolder(self.Folder) then makefolder(self.Folder) end
+	pcall(function()
+		if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
+		if not isfolder(self.Folder) then makefolder(self.Folder) end
+	end)
 end
 
-function ConfigSystem:GetPath(name)
-	-- Normalize: trim whitespace and force forward slashes
-	name = tostring(name):gsub("^%s*(.-)%s*$", "%1"):gsub("[\/]+", "/")
-	return self.Folder .. "/" .. name .. ".json"
+function ConfigSystem:CleanName(name)
+	-- Aggressive trim: spaces, newlines, BOM, null bytes
+	name = tostring(name or "")
+	name = name:gsub("[
+	 ]+", "")  -- remove all whitespace
+	name = name:gsub("%z", "")            -- remove null bytes
+	name = name:gsub("98791", "")   -- remove BOM
+	return name
+end
+
+function ConfigSystem:FindFileExact(name)
+	-- Returns the EXACT path as reported by listfiles, or nil
+	name = self:CleanName(name)
+	if name == "" then return nil end
+
+	local ok, files = pcall(listfiles, self.Folder)
+	if not ok or type(files) ~= "table" then return nil end
+
+	for _, filepath in ipairs(files) do
+		if type(filepath) == "string" then
+			local basename = filepath:match("([^/\]+)%.json$")
+			if basename and basename:lower() == name:lower() then
+				return filepath  -- return exact path from listfiles
+			end
+		end
+	end
+	return nil
 end
 
 function ConfigSystem:List()
-	if not isfolder(self.Folder) then return {} end
 	local ok, files = pcall(listfiles, self.Folder)
 	if not ok or type(files) ~= "table" then return {} end
 	local names = {}
-	for _, file in ipairs(files) do
-		if type(file) == "string" then
-			local name = file:match("([^/\]+)%.json$")
-			if name then table.insert(names, name) end
+	for _, filepath in ipairs(files) do
+		if type(filepath) == "string" then
+			local basename = filepath:match("([^/\]+)%.json$")
+			if basename then table.insert(names, basename) end
 		end
 	end
 	return names
@@ -847,49 +871,44 @@ end
 
 function ConfigSystem:Save(name)
 	self:EnsureFolder()
-	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
+	name = self:CleanName(name)
+	if name == "" then return false, "Empty name" end
+
 	local data = {}
 	for flag, option in pairs(Options) do
 		if option and option.CurrentValue ~= nil then
 			data[flag] = option.CurrentValue
 		end
 	end
-	local path = self:GetPath(name)
+
+	local path = self.Folder .. "/" .. name .. ".json"
 	local ok, err = pcall(function()
 		writefile(path, HttpService:JSONEncode(data))
 	end)
 	if not ok then
-		warn("[ConfigSystem] Save failed for '" .. name .. "': " .. tostring(err))
+		return false, "Write failed: " .. tostring(err)
 	end
-	return ok
+	return true
 end
 
 function ConfigSystem:Load(name, silent)
-	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
-	local path = self:GetPath(name)
+	name = self:CleanName(name)
+	if name == "" then return false, "Empty name" end
 
-	-- Debug: print exactly what we're trying to read
-	if not silent then
-		print("[ConfigSystem] Attempting to load: " .. path)
+	-- HUNT: find the exact file path via listfiles
+	local exactPath = self:FindFileExact(name)
+	if not exactPath then
+		local allFiles = table.concat(self:List(), ", ")
+		if allFiles == "" then allFiles = "(folder empty or missing)" end
+		return false, "File '" .. name .. ".json' not found in folder. Found: " .. allFiles
 	end
 
-	-- Try to read directly instead of checking isfile first (some executors are buggy with isfile)
+	-- Read using the EXACT path returned by listfiles
 	local readOk, content = pcall(function()
-		return readfile(path)
+		return readfile(exactPath)
 	end)
-
 	if not readOk then
-		-- Debug: list what files actually exist
-		local exists = ""
-		if isfolder(self.Folder) then
-			local ok, files = pcall(listfiles, self.Folder)
-			if ok and type(files) == "table" then
-				for _, f in ipairs(files) do
-					exists = exists .. f .. "; "
-				end
-			end
-		end
-		return false, "Cannot read file '" .. path .. "'. Existing files: " .. exists
+		return false, "readfile() failed on '" .. exactPath .. "': " .. tostring(content)
 	end
 
 	local decodeOk, data = pcall(function()
@@ -904,46 +923,42 @@ function ConfigSystem:Load(name, silent)
 
 	local loadedCount = 0
 	local failCount = 0
-	local failLog = {}
 	for flag, value in pairs(data) do
 		local option = Options[flag]
 		if option and option.Set then
-			local setOk, setErr = pcall(function()
+			local setOk = pcall(function()
 				option:Set(value)
 			end)
 			if setOk then
 				loadedCount = loadedCount + 1
 			else
 				failCount = failCount + 1
-				table.insert(failLog, flag .. ": " .. tostring(setErr))
 			end
 		else
 			failCount = failCount + 1
-			table.insert(failLog, flag .. ": missing or no :Set()")
 		end
 	end
+
 	if not silent then
-		return true, loadedCount, failCount, failLog
+		return true, loadedCount, failCount
 	end
 	return true, loadedCount
 end
 
 function ConfigSystem:Delete(name)
-	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
-	local path = self:GetPath(name)
-	pcall(function() delfile(path) end)
+	name = self:CleanName(name)
+	local exactPath = self:FindFileExact(name)
+	if exactPath then
+		pcall(function() delfile(exactPath) end)
+	end
 end
 
 function ConfigSystem:SetAutoload(name)
-	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
-	if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
-	local ok, err = pcall(function()
+	name = self:CleanName(name)
+	pcall(function()
+		if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
 		writefile(self.AutoloadFile, name)
 	end)
-	if not ok then
-		warn("[ConfigSystem] SetAutoload failed: " .. tostring(err))
-	end
-	return ok
 end
 
 function ConfigSystem:GetAutoload()
@@ -951,8 +966,7 @@ function ConfigSystem:GetAutoload()
 		return readfile(self.AutoloadFile)
 	end)
 	if ok and type(content) == "string" then
-		local name = content:gsub("^%s*(.-)%s*$", "%1")
-		return name ~= "" and name or nil
+		return self:CleanName(content)
 	end
 	return nil
 end
@@ -1566,12 +1580,16 @@ Tabs.Settings:CreateButton({
 	Name = "💾 Save Config",
 	Callback = function()
 		local name = ConfigNameInput.CurrentValue
-		if not name or name:gsub("%s+", "") == "" then
+		if not name or ConfigSystem:CleanName(name) == "" then
 			Rayfield:Notify({Title = "Config Manager", Content = "Enter a config name first!", Duration = 3})
 			return
 		end
-		ConfigSystem:Save(name)
-		Rayfield:Notify({Title = "Config Saved", Content = '"' .. name .. '" saved successfully!', Duration = 3})
+		local ok, err = ConfigSystem:Save(name)
+		if ok then
+			Rayfield:Notify({Title = "Config Saved", Content = '"' .. ConfigSystem:CleanName(name) .. '" saved!', Duration = 3})
+		else
+			Rayfield:Notify({Title = "Save Failed", Content = tostring(err), Duration = 4})
+		end
 
 		local list = ConfigSystem:List()
 		ConfigLoadDropdown:Refresh(list)
@@ -1583,24 +1601,27 @@ Tabs.Settings:CreateButton({
 	Name = "♻️ Overwrite Config",
 	Callback = function()
 		local name = ConfigNameInput.CurrentValue
-		if not name or name:gsub("%s+", "") == "" then
+		if not name or ConfigSystem:CleanName(name) == "" then
 			local selected = ConfigLoadDropdown.CurrentOption
 			if selected and selected[1] then
 				name = selected[1]
 			else
-				Rayfield:Notify({Title = "Config Manager", Content = "Enter a config name or select one from Load Config first!", Duration = 3})
+				Rayfield:Notify({Title = "Config Manager", Content = "Enter a name or select from Load Config!", Duration = 3})
 				return
 			end
 		end
-		-- Check if file exists by trying to read it
-		local path = ConfigSystem:GetPath(name)
-		local exists = pcall(function() return readfile(path) end)
-		if not exists then
-			Rayfield:Notify({Title = "Config Manager", Content = '"' .. name .. '" does not exist. Use Save Config instead.', Duration = 3})
+		local clean = ConfigSystem:CleanName(name)
+		local exactPath = ConfigSystem:FindFileExact(clean)
+		if not exactPath then
+			Rayfield:Notify({Title = "Config Manager", Content = '"' .. clean .. '" does not exist. Use Save first.', Duration = 3})
 			return
 		end
-		ConfigSystem:Save(name)
-		Rayfield:Notify({Title = "Config Overwritten", Content = '"' .. name .. '" has been overwritten with current settings.', Duration = 3})
+		local ok, err = ConfigSystem:Save(clean)
+		if ok then
+			Rayfield:Notify({Title = "Config Overwritten", Content = '"' .. clean .. '" updated!', Duration = 3})
+		else
+			Rayfield:Notify({Title = "Overwrite Failed", Content = tostring(err), Duration = 4})
+		end
 
 		local list = ConfigSystem:List()
 		ConfigLoadDropdown:Refresh(list)
@@ -1617,11 +1638,11 @@ ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
 	Callback = function(Value)
 		local name = Value[1]
 		if name then
-			local ok, loaded, failed, log = ConfigSystem:Load(name)
+			local ok, loaded, failed = ConfigSystem:Load(name)
 			if ok then
-				Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings, ' .. tostring(failed) .. ' skipped)', Duration = 3})
+				Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings)', Duration = 3})
 			else
-				Rayfield:Notify({Title = "Config Error", Content = tostring(loaded), Duration = 6})
+				Rayfield:Notify({Title = "Config Error", Content = tostring(loaded), Duration = 8})
 			end
 		end
 	end
@@ -1637,7 +1658,7 @@ ConfigAutoloadDropdown = Tabs.Settings:CreateDropdown({
 		local name = Value[1]
 		if name then
 			ConfigSystem:SetAutoload(name)
-			Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload on next join/teleport.', Duration = 3})
+			Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload next time.', Duration = 3})
 		end
 	end
 })
@@ -1655,12 +1676,12 @@ Tabs.Settings:CreateButton({
 	Name = "🗑️ Delete Config",
 	Callback = function()
 		local name = ConfigNameInput.CurrentValue
-		if not name or name:gsub("%s+", "") == "" then
+		if not name or ConfigSystem:CleanName(name) == "" then
 			Rayfield:Notify({Title = "Config Manager", Content = "Enter the config name to delete!", Duration = 3})
 			return
 		end
 		ConfigSystem:Delete(name)
-		Rayfield:Notify({Title = "Config Deleted", Content = '"' .. name .. '" deleted.', Duration = 3})
+		Rayfield:Notify({Title = "Config Deleted", Content = '"' .. ConfigSystem:CleanName(name) .. '" deleted.', Duration = 3})
 
 		local list = ConfigSystem:List()
 		ConfigLoadDropdown:Refresh(list)
@@ -1680,66 +1701,47 @@ task.delay(1, function()
 	end
 end)
 
--- SUPER ROBUST AUTOLOAD
+-- ROBUST AUTOLOAD
 task.spawn(function()
-	-- Wait for Rayfield to fully build all Options
+	-- Wait until Rayfield has built all Options
 	local ready = false
 	for i = 1, 60 do
 		local count = 0
 		for _ in pairs(Options) do count = count + 1 end
-		if count >= 10 then
-			ready = true
-			break
-		end
+		if count >= 10 then ready = true; break end
 		task.wait(0.5)
 	end
 	if not ready then
-		warn("[ZangetsuHub] Autoload timeout: Options not ready after 30s")
+		warn("[ZangetsuHub] Autoload timeout.")
 		return
 	end
 
 	local autoload = ConfigSystem:GetAutoload()
-	if not autoload then
-		print("[ZangetsuHub] No autoload config set.")
-		return
-	end
+	if not autoload then return end
 
-	print("[ZangetsuHub] Autoload target: '" .. autoload .. "'")
-
-	-- Try to load with full error details
-	local ok, loaded, failed, log = ConfigSystem:Load(autoload)
+	local ok, loaded, failed = ConfigSystem:Load(autoload)
 	if ok then
-		-- Force UI refresh by re-setting every loaded value
+		-- Force UI refresh
 		for flag, option in pairs(Options) do
 			if option and option.CurrentValue ~= nil and option.Set then
-				pcall(function()
-					option:Set(option.CurrentValue)
-				end)
+				pcall(function() option:Set(option.CurrentValue) end)
 			end
 		end
-
 		Rayfield:Notify({
 			Title = "✅ Config Autoloaded",
-			Content = '"' .. autoload .. '" loaded! (' .. tostring(loaded) .. ' settings applied)',
+			Content = '"' .. autoload .. '" loaded! (' .. tostring(loaded) .. ' settings)',
 			Duration = 5
 		})
-
 		pcall(function()
 			ConfigLoadDropdown:Set({autoload})
 			ConfigAutoloadDropdown:Set({autoload})
 		end)
 	else
-		-- Show EXACT error with path info
-		local errMsg = tostring(loaded)
-		if #errMsg > 100 then
-			errMsg = errMsg:sub(1, 97) .. "..."
-		end
 		Rayfield:Notify({
 			Title = "❌ Autoload Failed",
-			Content = errMsg,
-			Duration = 8
+			Content = tostring(loaded),
+			Duration = 10
 		})
-		warn("[ZangetsuHub] Autoload error: " .. tostring(loaded))
 	end
 end)
 
