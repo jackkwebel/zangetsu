@@ -1,24 +1,25 @@
--- Zangetsu Hub by deivid (modified)
+-- Zangetsu Hub by deivid (modified) — Rayfield Edition with Custom Themes
 
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
-local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
-
-local Options = Library.Options
-local Toggles = Library.Toggles
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local HUB_SCRIPT_URL = "https://raw.githubusercontent.com/jackkwebel/zangetsu/main/zangetsu.lua"
 
-Library.ForceCheckbox = false
-Library.ShowToggleFrameInKeybinds = true
-
-local Window = Library:CreateWindow({
-	Title = "Zangetsu Hub",
-	Footer = "AOT:R",
-	Icon = 95816097006870,
-	NotifySide = "Right",
-	ShowCustomCursor = true,
+local Window = Rayfield:CreateWindow({
+	Name = "Zangetsu Hub",
+	LoadingTitle = "Zangetsu Hub",
+	LoadingSubtitle = "AOT:R",
+	ConfigurationSaving = {
+		Enabled = true,
+		FolderName = "ZangetsuHub",
+		FileName = "AOT-R"
+	},
+	Discord = {
+		Enabled = false,
+		Invite = "",
+		RememberJoins = true
+	},
+	KeySystem = false,
+	KeySettings = {}
 })
 
 -- Services
@@ -32,31 +33,337 @@ local HttpService = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- Universal queue_on_teleport wrapper
-local function QueueOnTeleport(code)
-	if syn and syn.queue_on_teleport then
-		if pcall(syn.queue_on_teleport, code) then return true end
-	end
-	if queue_on_teleport then
-		if pcall(queue_on_teleport, code) then return true end
-	end
-	if fluxus and fluxus.queue_on_teleport then
-		if pcall(fluxus.queue_on_teleport, code) then return true end
-	end
-	return false
-end
+-- ========================
+--   THEME SYSTEM
+-- ========================
 
-local LOADER = 'loadstring(game:HttpGet("' .. HUB_SCRIPT_URL .. '"))()'
+local Themes = {
+	Default = {
+		Background = Color3.fromRGB(25, 25, 25),
+		Topbar = Color3.fromRGB(34, 34, 34),
+		Shadow = Color3.fromRGB(20, 20, 20),
+		NotificationBackground = Color3.fromRGB(25, 25, 25),
+		NotificationActionsBackground = Color3.fromRGB(230, 230, 230),
+		TabBackground = Color3.fromRGB(80, 80, 80),
+		TabStroke = Color3.fromRGB(85, 85, 85),
+		TabBackgroundSelected = Color3.fromRGB(210, 210, 210),
+		TabTextColor = Color3.fromRGB(240, 240, 240),
+		SelectedTabTextColor = Color3.fromRGB(50, 50, 50),
+		ElementBackground = Color3.fromRGB(35, 35, 35),
+		ElementBackgroundHover = Color3.fromRGB(40, 40, 40),
+		SecondaryElementBackground = Color3.fromRGB(25, 25, 25),
+		ElementStroke = Color3.fromRGB(50, 50, 50),
+		SecondaryElementStroke = Color3.fromRGB(40, 40, 40),
+		SliderBackground = Color3.fromRGB(50, 138, 220),
+		SliderProgress = Color3.fromRGB(50, 138, 220),
+		SliderStroke = Color3.fromRGB(58, 163, 255),
+		ToggleBackground = Color3.fromRGB(30, 30, 30),
+		ToggleEnabled = Color3.fromRGB(0, 146, 214),
+		ToggleDisabled = Color3.fromRGB(100, 100, 100),
+		ToggleEnabledStroke = Color3.fromRGB(0, 170, 255),
+		ToggleDisabledStroke = Color3.fromRGB(125, 125, 125),
+		ToggleEnabledOuterStroke = Color3.fromRGB(100, 100, 100),
+		ToggleDisabledOuterStroke = Color3.fromRGB(65, 65, 65),
+		DropdownSelected = Color3.fromRGB(40, 40, 40),
+		DropdownUnselected = Color3.fromRGB(30, 30, 30),
+		InputBackground = Color3.fromRGB(30, 30, 30),
+		InputStroke = Color3.fromRGB(65, 65, 65),
+		PlaceholderColor = Color3.fromRGB(178, 178, 178)
+	},
+	DarkRed = {
+		Background = Color3.fromRGB(20, 20, 20),
+		Topbar = Color3.fromRGB(30, 20, 20),
+		Shadow = Color3.fromRGB(15, 10, 10),
+		NotificationBackground = Color3.fromRGB(25, 20, 20),
+		NotificationActionsBackground = Color3.fromRGB(230, 200, 200),
+		TabBackground = Color3.fromRGB(80, 50, 50),
+		TabStroke = Color3.fromRGB(100, 60, 60),
+		TabBackgroundSelected = Color3.fromRGB(220, 100, 100),
+		TabTextColor = Color3.fromRGB(240, 220, 220),
+		SelectedTabTextColor = Color3.fromRGB(50, 20, 20),
+		ElementBackground = Color3.fromRGB(35, 25, 25),
+		ElementBackgroundHover = Color3.fromRGB(45, 30, 30),
+		SecondaryElementBackground = Color3.fromRGB(25, 18, 18),
+		ElementStroke = Color3.fromRGB(70, 45, 45),
+		SecondaryElementStroke = Color3.fromRGB(55, 35, 35),
+		SliderBackground = Color3.fromRGB(200, 50, 50),
+		SliderProgress = Color3.fromRGB(220, 60, 60),
+		SliderStroke = Color3.fromRGB(255, 80, 80),
+		ToggleBackground = Color3.fromRGB(30, 20, 20),
+		ToggleEnabled = Color3.fromRGB(200, 50, 50),
+		ToggleDisabled = Color3.fromRGB(100, 70, 70),
+		ToggleEnabledStroke = Color3.fromRGB(255, 70, 70),
+		ToggleDisabledStroke = Color3.fromRGB(130, 90, 90),
+		ToggleEnabledOuterStroke = Color3.fromRGB(100, 70, 70),
+		ToggleDisabledOuterStroke = Color3.fromRGB(65, 45, 45),
+		DropdownSelected = Color3.fromRGB(45, 30, 30),
+		DropdownUnselected = Color3.fromRGB(35, 22, 22),
+		InputBackground = Color3.fromRGB(30, 20, 20),
+		InputStroke = Color3.fromRGB(80, 50, 50),
+		PlaceholderColor = Color3.fromRGB(200, 160, 160)
+	},
+	Ocean = {
+		Background = Color3.fromRGB(15, 25, 35),
+		Topbar = Color3.fromRGB(20, 35, 50),
+		Shadow = Color3.fromRGB(10, 18, 28),
+		NotificationBackground = Color3.fromRGB(18, 30, 45),
+		NotificationActionsBackground = Color3.fromRGB(200, 230, 255),
+		TabBackground = Color3.fromRGB(40, 70, 100),
+		TabStroke = Color3.fromRGB(50, 90, 130),
+		TabBackgroundSelected = Color3.fromRGB(80, 180, 255),
+		TabTextColor = Color3.fromRGB(220, 240, 255),
+		SelectedTabTextColor = Color3.fromRGB(10, 30, 50),
+		ElementBackground = Color3.fromRGB(22, 38, 55),
+		ElementBackgroundHover = Color3.fromRGB(28, 50, 75),
+		SecondaryElementBackground = Color3.fromRGB(15, 28, 42),
+		ElementStroke = Color3.fromRGB(35, 65, 95),
+		SecondaryElementStroke = Color3.fromRGB(28, 50, 75),
+		SliderBackground = Color3.fromRGB(0, 170, 255),
+		SliderProgress = Color3.fromRGB(50, 200, 255),
+		SliderStroke = Color3.fromRGB(100, 230, 255),
+		ToggleBackground = Color3.fromRGB(20, 35, 50),
+		ToggleEnabled = Color3.fromRGB(0, 170, 255),
+		ToggleDisabled = Color3.fromRGB(60, 90, 120),
+		ToggleEnabledStroke = Color3.fromRGB(50, 200, 255),
+		ToggleDisabledStroke = Color3.fromRGB(80, 120, 160),
+		ToggleEnabledOuterStroke = Color3.fromRGB(60, 100, 140),
+		ToggleDisabledOuterStroke = Color3.fromRGB(35, 55, 75),
+		DropdownSelected = Color3.fromRGB(28, 50, 75),
+		DropdownUnselected = Color3.fromRGB(20, 35, 55),
+		InputBackground = Color3.fromRGB(20, 35, 50),
+		InputStroke = Color3.fromRGB(50, 85, 120),
+		PlaceholderColor = Color3.fromRGB(160, 200, 230)
+	},
+	Midnight = {
+		Background = Color3.fromRGB(10, 10, 25),
+		Topbar = Color3.fromRGB(15, 15, 40),
+		Shadow = Color3.fromRGB(8, 8, 20),
+		NotificationBackground = Color3.fromRGB(12, 12, 30),
+		NotificationActionsBackground = Color3.fromRGB(200, 200, 255),
+		TabBackground = Color3.fromRGB(50, 50, 90),
+		TabStroke = Color3.fromRGB(70, 70, 120),
+		TabBackgroundSelected = Color3.fromRGB(120, 100, 255),
+		TabTextColor = Color3.fromRGB(220, 220, 255),
+		SelectedTabTextColor = Color3.fromRGB(30, 20, 60),
+		ElementBackground = Color3.fromRGB(20, 20, 45),
+		ElementBackgroundHover = Color3.fromRGB(28, 28, 60),
+		SecondaryElementBackground = Color3.fromRGB(12, 12, 30),
+		ElementStroke = Color3.fromRGB(40, 40, 80),
+		SecondaryElementStroke = Color3.fromRGB(30, 30, 65),
+		SliderBackground = Color3.fromRGB(130, 100, 255),
+		SliderProgress = Color3.fromRGB(150, 120, 255),
+		SliderStroke = Color3.fromRGB(180, 160, 255),
+		ToggleBackground = Color3.fromRGB(18, 18, 40),
+		ToggleEnabled = Color3.fromRGB(130, 100, 255),
+		ToggleDisabled = Color3.fromRGB(70, 70, 110),
+		ToggleEnabledStroke = Color3.fromRGB(160, 140, 255),
+		ToggleDisabledStroke = Color3.fromRGB(90, 90, 140),
+		ToggleEnabledOuterStroke = Color3.fromRGB(70, 70, 120),
+		ToggleDisabledOuterStroke = Color3.fromRGB(40, 40, 70),
+		DropdownSelected = Color3.fromRGB(28, 28, 60),
+		DropdownUnselected = Color3.fromRGB(18, 18, 45),
+		InputBackground = Color3.fromRGB(18, 18, 40),
+		InputStroke = Color3.fromRGB(50, 50, 100),
+		PlaceholderColor = Color3.fromRGB(170, 170, 220)
+	},
+	Forest = {
+		Background = Color3.fromRGB(18, 28, 18),
+		Topbar = Color3.fromRGB(25, 40, 25),
+		Shadow = Color3.fromRGB(12, 20, 12),
+		NotificationBackground = Color3.fromRGB(20, 32, 20),
+		NotificationActionsBackground = Color3.fromRGB(200, 255, 200),
+		TabBackground = Color3.fromRGB(50, 80, 50),
+		TabStroke = Color3.fromRGB(65, 105, 65),
+		TabBackgroundSelected = Color3.fromRGB(100, 220, 100),
+		TabTextColor = Color3.fromRGB(220, 255, 220),
+		SelectedTabTextColor = Color3.fromRGB(15, 40, 15),
+		ElementBackground = Color3.fromRGB(25, 40, 25),
+		ElementBackgroundHover = Color3.fromRGB(32, 52, 32),
+		SecondaryElementBackground = Color3.fromRGB(18, 30, 18),
+		ElementStroke = Color3.fromRGB(45, 75, 45),
+		SecondaryElementStroke = Color3.fromRGB(35, 60, 35),
+		SliderBackground = Color3.fromRGB(60, 200, 60),
+		SliderProgress = Color3.fromRGB(80, 230, 80),
+		SliderStroke = Color3.fromRGB(120, 255, 120),
+		ToggleBackground = Color3.fromRGB(22, 38, 22),
+		ToggleEnabled = Color3.fromRGB(60, 200, 60),
+		ToggleDisabled = Color3.fromRGB(70, 100, 70),
+		ToggleEnabledStroke = Color3.fromRGB(90, 240, 90),
+		ToggleDisabledStroke = Color3.fromRGB(90, 130, 90),
+		ToggleEnabledOuterStroke = Color3.fromRGB(70, 110, 70),
+		ToggleDisabledOuterStroke = Color3.fromRGB(40, 65, 40),
+		DropdownSelected = Color3.fromRGB(32, 52, 32),
+		DropdownUnselected = Color3.fromRGB(22, 38, 22),
+		InputBackground = Color3.fromRGB(22, 38, 22),
+		InputStroke = Color3.fromRGB(55, 90, 55),
+		PlaceholderColor = Color3.fromRGB(160, 210, 160)
+	},
+	Sunset = {
+		Background = Color3.fromRGB(30, 20, 18),
+		Topbar = Color3.fromRGB(45, 28, 22),
+		Shadow = Color3.fromRGB(22, 14, 12),
+		NotificationBackground = Color3.fromRGB(35, 22, 18),
+		NotificationActionsBackground = Color3.fromRGB(255, 220, 200),
+		TabBackground = Color3.fromRGB(100, 65, 45),
+		TabStroke = Color3.fromRGB(130, 85, 60),
+		TabBackgroundSelected = Color3.fromRGB(255, 160, 80),
+		TabTextColor = Color3.fromRGB(255, 235, 220),
+		SelectedTabTextColor = Color3.fromRGB(60, 30, 15),
+		ElementBackground = Color3.fromRGB(40, 25, 20),
+		ElementBackgroundHover = Color3.fromRGB(55, 32, 25),
+		SecondaryElementBackground = Color3.fromRGB(30, 18, 14),
+		ElementStroke = Color3.fromRGB(75, 45, 35),
+		SecondaryElementStroke = Color3.fromRGB(60, 35, 28),
+		SliderBackground = Color3.fromRGB(255, 140, 50),
+		SliderProgress = Color3.fromRGB(255, 170, 70),
+		SliderStroke = Color3.fromRGB(255, 200, 100),
+		ToggleBackground = Color3.fromRGB(35, 22, 18),
+		ToggleEnabled = Color3.fromRGB(255, 130, 40),
+		ToggleDisabled = Color3.fromRGB(120, 80, 60),
+		ToggleEnabledStroke = Color3.fromRGB(255, 160, 60),
+		ToggleDisabledStroke = Color3.fromRGB(150, 100, 75),
+		ToggleEnabledOuterStroke = Color3.fromRGB(130, 85, 60),
+		ToggleDisabledOuterStroke = Color3.fromRGB(70, 45, 35),
+		DropdownSelected = Color3.fromRGB(55, 32, 25),
+		DropdownUnselected = Color3.fromRGB(38, 22, 18),
+		InputBackground = Color3.fromRGB(35, 22, 18),
+		InputStroke = Color3.fromRGB(85, 55, 40),
+		PlaceholderColor = Color3.fromRGB(220, 180, 160)
+	},
+	["AOT Green"] = {
+		Background = Color3.fromRGB(12, 18, 12),
+		Topbar = Color3.fromRGB(18, 28, 18),
+		Shadow = Color3.fromRGB(8, 14, 8),
+		NotificationBackground = Color3.fromRGB(15, 24, 15),
+		NotificationActionsBackground = Color3.fromRGB(180, 255, 180),
+		TabBackground = Color3.fromRGB(40, 70, 40),
+		TabStroke = Color3.fromRGB(55, 95, 55),
+		TabBackgroundSelected = Color3.fromRGB(80, 200, 80),
+		TabTextColor = Color3.fromRGB(210, 255, 210),
+		SelectedTabTextColor = Color3.fromRGB(10, 35, 10),
+		ElementBackground = Color3.fromRGB(20, 35, 20),
+		ElementBackgroundHover = Color3.fromRGB(28, 48, 28),
+		SecondaryElementBackground = Color3.fromRGB(14, 24, 14),
+		ElementStroke = Color3.fromRGB(35, 65, 35),
+		SecondaryElementStroke = Color3.fromRGB(28, 50, 28),
+		SliderBackground = Color3.fromRGB(50, 180, 50),
+		SliderProgress = Color3.fromRGB(70, 210, 70),
+		SliderStroke = Color3.fromRGB(100, 240, 100),
+		ToggleBackground = Color3.fromRGB(18, 32, 18),
+		ToggleEnabled = Color3.fromRGB(50, 180, 50),
+		ToggleDisabled = Color3.fromRGB(60, 95, 60),
+		ToggleEnabledStroke = Color3.fromRGB(80, 220, 80),
+		ToggleDisabledStroke = Color3.fromRGB(80, 120, 80),
+		ToggleEnabledOuterStroke = Color3.fromRGB(60, 100, 60),
+		ToggleDisabledOuterStroke = Color3.fromRGB(35, 60, 35),
+		DropdownSelected = Color3.fromRGB(28, 48, 28),
+		DropdownUnselected = Color3.fromRGB(18, 32, 18),
+		InputBackground = Color3.fromRGB(18, 32, 18),
+		InputStroke = Color3.fromRGB(50, 85, 50),
+		PlaceholderColor = Color3.fromRGB(150, 210, 150)
+	}
+}
+
+local function SetRayfieldTheme(themeName)
+	local theme = Themes[themeName]
+	if not theme then return end
+
+	local success = pcall(function()
+		local main = game:GetService("CoreGui"):FindFirstChild("Rayfield")
+		if not main then return end
+
+		-- Main background
+		local bg = main:FindFirstChild("Main") and main.Main:FindFirstChild("Background")
+		if bg then
+			bg.ImageColor3 = theme.Background
+		end
+
+		-- Topbar
+		local topbar = main:FindFirstChild("Main") and main.Main:FindFirstChild("Topbar")
+		if topbar then
+			topbar.BackgroundColor3 = theme.Topbar
+		end
+
+		-- Tabs
+		local tabsList = main:FindFirstChild("Main") and main.Main:FindFirstChild("Elements") and main.Main.Elements:FindFirstChild("TabList")
+		if tabsList then
+			for _, tab in ipairs(tabsList:GetDescendants()) do
+				if tab:IsA("Frame") and tab.Name == "TabButton" then
+					local isSelected = tab:FindFirstChild("TabTitle") and tab.TabTitle.TextColor3.R < 0.5
+					tab.BackgroundColor3 = isSelected and theme.TabBackgroundSelected or theme.TabBackground
+					if tab:FindFirstChild("UIStroke") then
+						tab.UIStroke.Color = theme.TabStroke
+					end
+					if tab:FindFirstChild("TabTitle") then
+						tab.TabTitle.TextColor3 = isSelected and theme.SelectedTabTextColor or theme.TabTextColor
+					end
+				end
+			end
+		end
+
+		-- Elements (toggles, sliders, etc.)
+		local content = main:FindFirstChild("Main") and main.Main:FindFirstChild("Elements") and main.Main.Elements:FindFirstChild("Content")
+		if content then
+			for _, section in ipairs(content:GetDescendants()) do
+				if section:IsA("Frame") then
+					-- Section backgrounds
+					if section.Name == "Section" or section.Name == "SectionContainer" then
+						section.BackgroundColor3 = theme.ElementBackground
+					end
+					-- Element backgrounds
+					if section.Name == "Element" or section.Name == "Toggle" or section.Name == "Slider" or section.Name == "Dropdown" or section.Name == "Input" then
+						section.BackgroundColor3 = theme.ElementBackground
+						if section:FindFirstChild("UIStroke") then
+							section.UIStroke.Color = theme.ElementStroke
+						end
+					end
+					-- Toggles
+					if section.Name == "Toggle" then
+						local toggleBtn = section:FindFirstChild("ToggleFrame") and section.ToggleFrame:FindFirstChild("ToggleCircle")
+						if toggleBtn then
+							local isEnabled = toggleBtn.Position.X.Scale > 0.5
+							toggleBtn.BackgroundColor3 = isEnabled and theme.ToggleEnabled or theme.ToggleDisabled
+						end
+					end
+					-- Sliders
+					if section.Name == "Slider" then
+						local sliderProg = section:FindFirstChild("SliderFrame") and section.SliderFrame:FindFirstChild("SliderProgress")
+						if sliderProg then
+							sliderProg.BackgroundColor3 = theme.SliderProgress
+						end
+					end
+				end
+			end
+		end
+
+		-- Notifications
+		local notifHolder = main:FindFirstChild("Notifications")
+		if notifHolder then
+			for _, notif in ipairs(notifHolder:GetDescendants()) do
+				if notif:IsA("Frame") and notif.Name == "Notification" then
+					notif.BackgroundColor3 = theme.NotificationBackground
+				end
+			end
+		end
+	end)
+
+	if success then
+		Rayfield:Notify({
+			Title = "Theme Changed",
+			Content = "Applied theme: " .. themeName,
+			Duration = 3
+		})
+	end
+end
 
 -- ========================
 --   RETURN TO LOBBY LOGIC
 -- ========================
 
-local LOBBY_PLACE_ID = 6933311135 -- AOT:R Town Central/Lobby Place ID
+local LOBBY_PLACE_ID = 6933311135
 
 local function ReturnToLobby()
 	local success, err = pcall(function()
-		-- Try remote first (works if in lobby or if remote exists)
 		local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 		if remotes then
 			local returnRemote = remotes:FindFirstChild("ReturnToLobby")
@@ -72,18 +379,17 @@ local function ReturnToLobby()
 				else
 					returnRemote:InvokeServer()
 				end
-				Library:Notify({ Title = "Return to Lobby", Description = "Teleporting to Town Central...", Time = 3 })
+				Rayfield:Notify({ Title = "Return to Lobby", Content = "Teleporting to Town Central...", Duration = 3 })
 				return
 			end
 		end
 		
-		-- Fallback: Force teleport to lobby place (works from missions/raids)
-		Library:Notify({ Title = "Return to Lobby", Description = "Teleporting to Town Central...", Time = 3 })
+		Rayfield:Notify({ Title = "Return to Lobby", Content = "Teleporting to Town Central...", Duration = 3 })
 		TeleportService:Teleport(LOBBY_PLACE_ID, LocalPlayer)
 	end)
 	
 	if not success then
-		Library:Notify({ Title = "Error", Description = "Failed to return to lobby: " .. tostring(err), Time = 4 })
+		Rayfield:Notify({ Title = "Error", Content = "Failed to return to lobby: " .. tostring(err), Duration = 4 })
 	end
 end
 
@@ -95,7 +401,6 @@ local function CheckShadowBan()
 	local isBanned = false
 	local reasons = {}
 
-	-- 1. Check player attributes (most common for silent flags)
 	for attrName, attrValue in pairs(LocalPlayer:GetAttributes()) do
 		local lower = attrName:lower()
 		if lower:find("ban") or lower:find("shadow") or lower:find("mute") or lower:find("gift") or lower:find("trade") or lower:find("party") then
@@ -106,7 +411,6 @@ local function CheckShadowBan()
 		end
 	end
 
-	-- 2. Check direct children of LocalPlayer
 	local banValues = { "ShadowBanned", "Banned", "IsBanned", "CanGift", "CanTrade", "CanJoinParty", "CanInvite", "SocialBanned" }
 	for _, valName in ipairs(banValues) do
 		local obj = LocalPlayer:FindFirstChild(valName)
@@ -124,12 +428,10 @@ local function CheckShadowBan()
 		end
 	end
 
-	-- 3. Deep scan ReplicatedStorage for player data (works anywhere)
 	local function ScanFolder(folder, path)
 		for _, child in ipairs(folder:GetChildren()) do
 			local childPath = path .. "/" .. child.Name
 			
-			-- Check if this is our player data
 			if child.Name == LocalPlayer.Name or child.Name == tostring(LocalPlayer.UserId) then
 				for _, valName in ipairs(banValues) do
 					local dataVal = child:FindFirstChild(valName)
@@ -139,7 +441,6 @@ local function CheckShadowBan()
 					end
 				end
 				
-				-- Also check attributes on the data folder
 				for attrName, attrValue in pairs(child:GetAttributes()) do
 					local lower = attrName:lower()
 					if lower:find("ban") or lower:find("shadow") or lower:find("mute") then
@@ -151,7 +452,6 @@ local function CheckShadowBan()
 				end
 			end
 			
-			-- Check for ban lists
 			local lowerName = child.Name:lower()
 			if lowerName:find("ban") or lowerName:find("shadow") or lowerName:find("moderation") or lowerName:find("punish") then
 				if child:IsA("Folder") or child:IsA("Configuration") then
@@ -162,7 +462,6 @@ local function CheckShadowBan()
 				end
 			end
 			
-			-- Recurse into folders (but not too deep to avoid lag)
 			if (child:IsA("Folder") or child:IsA("Configuration") or child:IsA("Model")) and #path < 50 then
 				ScanFolder(child, childPath)
 			end
@@ -173,7 +472,6 @@ local function CheckShadowBan()
 		ScanFolder(ReplicatedStorage, "RS")
 	end)
 
-	-- 4. Check PlayerGui for visible ban/warning text
 	local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
 	if playerGui then
 		for _, gui in ipairs(playerGui:GetDescendants()) do
@@ -188,23 +486,22 @@ local function CheckShadowBan()
 		end
 	end
 
-	-- 5. Notify result
 	if isBanned then
 		local reasonStr = table.concat(reasons, ", ")
 		if #reasonStr > 100 then
 			reasonStr = reasonStr:sub(1, 97) .. "..."
 		end
 		
-		Library:Notify({
+		Rayfield:Notify({
 			Title = "⚠️ Shadowban Checker",
-			Description = "SHADOW BANNED detected!\nYou cannot gift, join lobbies, or play with friends.\nFlags: " .. reasonStr,
-			Time = 10,
+			Content = "SHADOW BANNED detected!\nYou cannot gift, join lobbies, or play with friends.\nFlags: " .. reasonStr,
+			Duration = 10,
 		})
 	else
-		Library:Notify({
+		Rayfield:Notify({
 			Title = "✅ Shadowban Checker",
-			Description = "No shadow ban detected.\nGifting, lobbies, and friends should work normally.",
-			Time = 4,
+			Content = "No shadow ban detected.\nGifting, lobbies, and friends should work normally.",
+			Duration = 4,
 		})
 	end
 end
@@ -233,7 +530,7 @@ local function StartFailsafe()
 	if hrp then lastPosition = hrp.Position end
 
 	table.insert(failsafeConnections, RunService.Heartbeat:Connect(function()
-		if not Toggles.Failsafe.Value then return end
+		if not Options.Failsafe.CurrentValue then return end
 		local currentHRP, currentHumanoid = GetCharacterParts()
 		if not currentHRP or not currentHumanoid then return end
 		local currentPos = currentHRP.Position
@@ -244,19 +541,19 @@ local function StartFailsafe()
 	end))
 
 	table.insert(failsafeConnections, UserInputService.InputBegan:Connect(function()
-		if Toggles.Failsafe.Value then ResetIdleTimer() end
+		if Options.Failsafe.CurrentValue then ResetIdleTimer() end
 	end))
 
 	task.spawn(function()
-		while Toggles.Failsafe.Value do
+		while Options.Failsafe.CurrentValue do
 			task.wait(1)
-			if not Toggles.Failsafe.Value then break end
-			local timeoutSeconds = (Options.FailsafeTimeout and Options.FailsafeTimeout.Value or 10) * 60
+			if not Options.Failsafe.CurrentValue then break end
+			local timeoutSeconds = (Options.FailsafeTimeout and Options.FailsafeTimeout.CurrentValue or 10) * 60
 			if tick() - lastActivity >= timeoutSeconds then
-				Library:Notify({
+				Rayfield:Notify({
 					Title = "Failsafe Triggered",
-					Description = "Idle for " .. tostring(Options.FailsafeTimeout.Value) .. " min. Returning to lobby...",
-					Time = 5,
+					Content = "Idle for " .. tostring(Options.FailsafeTimeout.CurrentValue) .. " min. Returning to lobby...",
+					Duration = 5,
 				})
 				task.wait(2)
 				ReturnToLobby()
@@ -275,7 +572,7 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
 	task.wait(0.5)
 	local hrp = newChar:WaitForChild("HumanoidRootPart", 5)
 	if hrp then lastPosition = hrp.Position end
-	if Toggles.Failsafe.Value then ResetIdleTimer() end
+	if Options.Failsafe.CurrentValue then ResetIdleTimer() end
 end)
 
 -- ========================
@@ -408,10 +705,10 @@ local function DeleteMap()
 		end
 	end
 
-	Library:Notify({
+	Rayfield:Notify({
 		Title = "Delete Map",
-		Description = "Map hidden. Humans, titans & UI kept.",
-		Time = 3,
+		Content = "Map hidden. Humans, titans & UI kept.",
+		Duration = 3,
 	})
 end
 
@@ -432,10 +729,10 @@ local function RestoreMap()
 
 	savedMapData = {}
 
-	Library:Notify({
+	Rayfield:Notify({
 		Title = "Delete Map",
-		Description = "Map restored (" .. tostring(restoredCount) .. " objects).",
-		Time = 3,
+		Content = "Map restored (" .. tostring(restoredCount) .. " objects).",
+		Duration = 3,
 	})
 end
 
@@ -478,10 +775,10 @@ local function Disable3DRendering()
 		end
 	end)
 
-	Library:Notify({
+	Rayfield:Notify({
 		Title = "3D Rendering",
-		Description = "Disabled. Screen blacked out.",
-		Time = 3,
+		Content = "Disabled. Screen blacked out.",
+		Duration = 3,
 	})
 end
 
@@ -499,7 +796,7 @@ local function Enable3DRendering()
 		blackoutPart = nil
 	end
 
-	Library:Notify({ Title = "3D Rendering", Description = "Restored.", Time = 3 })
+	Rayfield:Notify({ Title = "3D Rendering", Content = "Restored.", Duration = 3 })
 end
 
 -- ========================
@@ -507,11 +804,13 @@ end
 -- ========================
 
 local Tabs = {
-	Main     = Window:AddTab("Main",     "user"),
-	Utility  = Window:AddTab("Utility",  "wrench"),
-	Global   = Window:AddTab("Global",   "globe"),
-	Settings = Window:AddTab("Settings", "settings"),
+	Main     = Window:CreateTab("Main", "user"),
+	Utility  = Window:CreateTab("Utility", "wrench"),
+	Global   = Window:CreateTab("Global", "globe"),
+	Settings = Window:CreateTab("Settings", "settings"),
 }
+
+local Options = {}
 
 -- ========================
 --        MAIN TAB
@@ -526,42 +825,119 @@ local MapObjectives = {
 	["Chapel"]      = { "Skirmish" },
 }
 
-local MiscGroup = Tabs.Main:AddLeftGroupbox("Misc", "layout-grid")
+Tabs.Main:CreateSection("Misc")
 
-MiscGroup:AddButton({ Text = "Return to Lobby", Func = function() ReturnToLobby() end })
-MiscGroup:AddButton({ Text = "Shadowban Checker", Func = function() CheckShadowBan() end })
-MiscGroup:AddButton({ Text = "Join Discord", Func = function() end })
-
-local AutomationGroup = Tabs.Main:AddLeftGroupbox("Automation", "cpu")
-
-AutomationGroup:AddToggle("AutoFarm",          { Text = "Auto Farm",             Default = false, Callback = function() end })
-AutomationGroup:AddToggle("AutoFarmRaids",     { Text = "Auto Farm Raids",       Default = false, Callback = function() end })
-AutomationGroup:AddToggle("AutoRetry",         { Text = "Auto Retry",            Default = false, Callback = function() end })
-AutomationGroup:AddToggle("SoloOnly",          { Text = "Solo Only",             Default = false, Callback = function() end })
-AutomationGroup:AddToggle("AutoReturnToLobby", { Text = "Auto Return to Lobby",  Default = false, Callback = function() end })
-
-AutomationGroup:AddSlider("ReturnAfterXGames", {
-	Text = "Return to lobby after x games", Default = 10, Min = 1, Max = 250, Rounding = 0,
-	Callback = function() end,
+Tabs.Main:CreateButton({
+	Name = "Return to Lobby",
+	Callback = function() ReturnToLobby() end
 })
 
-AutomationGroup:AddToggle("AutoStartToggle", { Text = "Auto Start", Default = false, Callback = function() end })
-
-AutomationGroup:AddSlider("StartAfterXSeconds", {
-	Text = "Start after x seconds", Default = 0, Min = 0, Max = 500, Rounding = 0,
-	Callback = function() end,
+Tabs.Main:CreateButton({
+	Name = "Shadowban Checker",
+	Callback = function() CheckShadowBan() end
 })
 
-local MovementGroup = Tabs.Main:AddRightGroupbox("Movement", "move")
-
-MovementGroup:AddDropdown("MovementMode", {
-	Values = { "Teleport", "Hover" }, Default = 1, Multi = false, Text = "Movement Mode",
-	Callback = function() end,
+Tabs.Main:CreateButton({
+	Name = "Join Discord",
+	Callback = function() end
 })
-MovementGroup:AddSlider("HoverSpeed",  { Text = "Hover Speed",  Default = 400, Min = 0, Max = 500, Rounding = 0, Callback = function() end })
-MovementGroup:AddSlider("FloatHeight", { Text = "Float Height", Default = 300, Min = 0, Max = 300, Rounding = 0, Callback = function() end })
 
-local AutoStartGroup = Tabs.Main:AddRightGroupbox("Auto Start", "play")
+Tabs.Main:CreateSection("Automation")
+
+Options.AutoFarm = Tabs.Main:CreateToggle({
+	Name = "Auto Farm",
+	CurrentValue = false,
+	Flag = "AutoFarm",
+	Callback = function() end
+})
+
+Options.AutoFarmRaids = Tabs.Main:CreateToggle({
+	Name = "Auto Farm Raids",
+	CurrentValue = false,
+	Flag = "AutoFarmRaids",
+	Callback = function() end
+})
+
+Options.AutoRetry = Tabs.Main:CreateToggle({
+	Name = "Auto Retry",
+	CurrentValue = false,
+	Flag = "AutoRetry",
+	Callback = function() end
+})
+
+Options.SoloOnly = Tabs.Main:CreateToggle({
+	Name = "Solo Only",
+	CurrentValue = false,
+	Flag = "SoloOnly",
+	Callback = function() end
+})
+
+Options.AutoReturnToLobby = Tabs.Main:CreateToggle({
+	Name = "Auto Return to Lobby",
+	CurrentValue = false,
+	Flag = "AutoReturnToLobby",
+	Callback = function() end
+})
+
+Options.ReturnAfterXGames = Tabs.Main:CreateSlider({
+	Name = "Return to lobby after x games",
+	Range = {1, 250},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 10,
+	Flag = "ReturnAfterXGames",
+	Callback = function() end
+})
+
+Options.AutoStartToggle = Tabs.Main:CreateToggle({
+	Name = "Auto Start",
+	CurrentValue = false,
+	Flag = "AutoStartToggle",
+	Callback = function() end
+})
+
+Options.StartAfterXSeconds = Tabs.Main:CreateSlider({
+	Name = "Start after x seconds",
+	Range = {0, 500},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 0,
+	Flag = "StartAfterXSeconds",
+	Callback = function() end
+})
+
+Tabs.Main:CreateSection("Movement")
+
+Options.MovementMode = Tabs.Main:CreateDropdown({
+	Name = "Movement Mode",
+	Options = {"Teleport", "Hover"},
+	CurrentOption = {"Teleport"},
+	MultipleOptions = false,
+	Flag = "MovementMode",
+	Callback = function() end
+})
+
+Options.HoverSpeed = Tabs.Main:CreateSlider({
+	Name = "Hover Speed",
+	Range = {0, 500},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 400,
+	Flag = "HoverSpeed",
+	Callback = function() end
+})
+
+Options.FloatHeight = Tabs.Main:CreateSlider({
+	Name = "Float Height",
+	Range = {0, 300},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 300,
+	Flag = "FloatHeight",
+	Callback = function() end
+})
+
+Tabs.Main:CreateSection("Auto Start")
 
 local MissionMaps       = { "Shiganshina", "Trost", "Outskirts", "Forest", "Stohess", "Chapel" }
 local RaidMaps          = { "Trost", "Shiganshina", "Stohess", "Colossal" }
@@ -570,289 +946,446 @@ local ModifierOptions   = { "No Skills", "No Talents", "Nightmare", "Oddball", "
 local RAID_TITAN_TEXT   = "Trost: Attack Titan\nShiganshina: Armored Titan\nStohess: Female Titan\nColossal: Colossal Titan"
 local RaidTitanLabel    = nil
 
-AutoStartGroup:AddDropdown("AutoStartType", {
-	Values = { "Missions", "Raids" }, Default = 1, Multi = false, Text = "Type",
+Options.AutoStartType = Tabs.Main:CreateDropdown({
+	Name = "Type",
+	Options = {"Missions", "Raids"},
+	CurrentOption = {"Missions"},
+	MultipleOptions = false,
+	Flag = "AutoStartType",
 	Callback = function(Value)
-		if Value == "Missions" then
-			Options.AutoStartMap:SetValues(MissionMaps)
-			Options.AutoStartMap:SetValue(MissionMaps[1])
-			Options.AutoStartObjective:SetValues(MapObjectives[MissionMaps[1]] or { "Skirmish" })
-			Options.AutoStartObjective:SetValue((MapObjectives[MissionMaps[1]] or { "Skirmish" })[1])
-			if RaidTitanLabel then RaidTitanLabel:SetText("") end
+		local selected = Value[1]
+		if selected == "Missions" then
+			Options.AutoStartMap:Refresh(MissionMaps)
+			Options.AutoStartMap:Set({MissionMaps[1]})
+			Options.AutoStartObjective:Refresh(MapObjectives[MissionMaps[1]] or {"Skirmish"})
+			Options.AutoStartObjective:Set({(MapObjectives[MissionMaps[1]] or {"Skirmish"})[1]})
+			if RaidTitanLabel then pcall(function() RaidTitanLabel:Set({Content = ""}) end) end
 		else
-			Options.AutoStartMap:SetValues(RaidMaps)
-			Options.AutoStartMap:SetValue(RaidMaps[1])
-			Options.AutoStartObjective:SetValues(MapObjectives[RaidMaps[1]] or { "Skirmish" })
-			Options.AutoStartObjective:SetValue((MapObjectives[RaidMaps[1]] or { "Skirmish" })[1])
-			if RaidTitanLabel then RaidTitanLabel:SetText(RAID_TITAN_TEXT) end
+			Options.AutoStartMap:Refresh(RaidMaps)
+			Options.AutoStartMap:Set({RaidMaps[1]})
+			Options.AutoStartObjective:Refresh(MapObjectives[RaidMaps[1]] or {"Skirmish"})
+			Options.AutoStartObjective:Set({(MapObjectives[RaidMaps[1]] or {"Skirmish"})[1]})
+			if RaidTitanLabel then pcall(function() RaidTitanLabel:Set({Content = RAID_TITAN_TEXT}) end) end
 		end
-	end,
+	end
 })
 
-AutoStartGroup:AddDropdown("AutoStartMap", {
-	Values = MissionMaps, Default = 1, Multi = false, Text = "Map",
+Options.AutoStartMap = Tabs.Main:CreateDropdown({
+	Name = "Map",
+	Options = MissionMaps,
+	CurrentOption = {MissionMaps[1]},
+	MultipleOptions = false,
+	Flag = "AutoStartMap",
 	Callback = function(Value)
-		local objectives = MapObjectives[Value] or { "Skirmish" }
-		Options.AutoStartObjective:SetValues(objectives)
-		Options.AutoStartObjective:SetValue(objectives[1])
-	end,
+		local selected = Value[1]
+		local objectives = MapObjectives[selected] or {"Skirmish"}
+		Options.AutoStartObjective:Refresh(objectives)
+		Options.AutoStartObjective:Set({objectives[1]})
+	end
 })
 
-AutoStartGroup:AddDropdown("AutoStartObjective", {
-	Values = MapObjectives["Shiganshina"], Default = 1, Multi = false, Text = "Objective",
-	Callback = function() end,
+Options.AutoStartObjective = Tabs.Main:CreateDropdown({
+	Name = "Objective",
+	Options = MapObjectives["Shiganshina"],
+	CurrentOption = {MapObjectives["Shiganshina"][1]},
+	MultipleOptions = false,
+	Flag = "AutoStartObjective",
+	Callback = function() end
 })
 
-AutoStartGroup:AddDropdown("AutoStartDifficulty", {
-	Values = DifficultyOptions, Default = 1, Multi = false, Text = "Difficulty",
-	Callback = function() end,
+Options.AutoStartDifficulty = Tabs.Main:CreateDropdown({
+	Name = "Difficulty",
+	Options = DifficultyOptions,
+	CurrentOption = {DifficultyOptions[1]},
+	MultipleOptions = false,
+	Flag = "AutoStartDifficulty",
+	Callback = function() end
 })
 
-RaidTitanLabel = AutoStartGroup:AddLabel("", true)
-AutoStartGroup:AddDivider()
+RaidTitanLabel = Tabs.Main:CreateParagraph({Title = "", Content = ""})
 
-AutoStartGroup:AddDropdown("AutoStartModifiers", {
-	Values = ModifierOptions, Default = 1, Multi = true, Text = "Modifiers",
-	Callback = function() end,
+Options.AutoStartModifiers = Tabs.Main:CreateDropdown({
+	Name = "Modifiers",
+	Options = ModifierOptions,
+	CurrentOption = {},
+	MultipleOptions = true,
+	Flag = "AutoStartModifiers",
+	Callback = function() end
 })
 
-AutoStartGroup:AddToggle("MaxRewardModifier", {
-	Text = "Max Reward Modifier",
-	Tooltip = "Selects all modifiers except Boring and Simple",
-	Default = false,
+Options.MaxRewardModifier = Tabs.Main:CreateToggle({
+	Name = "Max Reward Modifier",
+	CurrentValue = false,
+	Flag = "MaxRewardModifier",
 	Callback = function(Value)
 		if Value then
-			Options.AutoStartModifiers:SetValue({
-				["No Skills"] = true, ["No Talents"] = true, ["Nightmare"] = true,
-				["Oddball"] = true, ["Injury Prone"] = true, ["Chronic Injuries"] = true,
-				["Fog"] = true, ["Glass Canon"] = true, ["Time Trial"] = true,
+			Options.AutoStartModifiers:Set({
+				"No Skills", "No Talents", "Nightmare",
+				"Oddball", "Injury Prone", "Chronic Injuries",
+				"Fog", "Glass Canon", "Time Trial"
 			})
 		else
-			Options.AutoStartModifiers:SetValue({})
+			Options.AutoStartModifiers:Set({})
 		end
-	end,
+	end
 })
 
 -- ========================
 --      UTILITY TAB
 -- ========================
 
-local CombatGroup = Tabs.Utility:AddLeftGroupbox("Combat Settings", "sword")
-CombatGroup:AddToggle("AutoRefill", { Text = "Auto Reload/Refill", Default = false, Callback = function() end })
-CombatGroup:AddToggle("AutoEscape", { Text = "Auto Escape",        Default = false, Callback = function() end })
-CombatGroup:AddToggle("MultiHit",   { Text = "Multi Hit",          Default = false, Callback = function() end })
-CombatGroup:AddSlider("TitansPerHit", { Text = "Titans per hit", Default = 3, Min = 1, Max = 20, Rounding = 0, Callback = function() end })
+Tabs.Utility:CreateSection("Combat Settings")
 
-local SecurityGroup = Tabs.Utility:AddLeftGroupbox("Security", "shield")
+Options.AutoRefill = Tabs.Utility:CreateToggle({
+	Name = "Auto Reload/Refill",
+	CurrentValue = false,
+	Flag = "AutoRefill",
+	Callback = function() end
+})
 
-SecurityGroup:AddToggle("Failsafe", {
-	Text = "Failsafe", Default = false,
+Options.AutoEscape = Tabs.Utility:CreateToggle({
+	Name = "Auto Escape",
+	CurrentValue = false,
+	Flag = "AutoEscape",
+	Callback = function() end
+})
+
+Options.MultiHit = Tabs.Utility:CreateToggle({
+	Name = "Multi Hit",
+	CurrentValue = false,
+	Flag = "MultiHit",
+	Callback = function() end
+})
+
+Options.TitansPerHit = Tabs.Utility:CreateSlider({
+	Name = "Titans per hit",
+	Range = {1, 20},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 3,
+	Flag = "TitansPerHit",
+	Callback = function() end
+})
+
+Tabs.Utility:CreateSection("Security")
+
+Options.Failsafe = Tabs.Utility:CreateToggle({
+	Name = "Failsafe",
+	CurrentValue = false,
+	Flag = "Failsafe",
 	Callback = function(Value)
 		if Value then
 			StartFailsafe()
-			Library:Notify({ Title = "Failsafe", Description = "Enabled! Will return to lobby after " .. Options.FailsafeTimeout.Value .. " min of idle time.", Time = 4 })
+			Rayfield:Notify({
+				Title = "Failsafe",
+				Content = "Enabled! Will return to lobby after " .. Options.FailsafeTimeout.CurrentValue .. " min of idle time.",
+				Duration = 4
+			})
 		else
 			StopFailsafe()
-			Library:Notify({ Title = "Failsafe", Description = "Disabled.", Time = 3 })
+			Rayfield:Notify({Title = "Failsafe", Content = "Disabled.", Duration = 3})
 		end
-	end,
-})
-
-SecurityGroup:AddSlider("FailsafeTimeout", {
-	Text = "Timeout", Default = 10, Min = 1, Max = 20, Rounding = 0, Suffix = " min",
-	Callback = function(Value)
-		if Toggles.Failsafe.Value then
-			ResetIdleTimer()
-			Library:Notify({ Title = "Failsafe", Description = "Timeout updated to " .. Value .. " min. Timer reset.", Time = 3 })
-		end
-	end,
-})
-
-local MasteryFarmGroup = Tabs.Utility:AddRightGroupbox("Mastery Farm", "zap")
-MasteryFarmGroup:AddToggle("TitanMasteryFarm", { Text = "Titan Mastery Farm", Default = false, Callback = function() end })
-MasteryFarmGroup:AddDropdown("MasteryMode", { Values = { "Both", "ODM", "Titan" }, Default = 1, Multi = false, Text = "Mastery Mode", Callback = function() end })
-
-local ExtrasGroup = Tabs.Utility:AddRightGroupbox("Extras", "star")
-ExtrasGroup:AddToggle("AutoSkipCutscenes", { Text = "Auto Skip Cutscenes",  Default = false, Callback = function() end })
-ExtrasGroup:AddToggle("DieAtStreak",       { Text = "Die at Streak",         Default = false, Callback = function() end })
-ExtrasGroup:AddSlider("DieAtXStreak",      { Text = "Die at x streak", Default = 10000, Min = 5000, Max = 100000, Rounding = 0, Callback = function() end })
-ExtrasGroup:AddToggle("AutoOpenChests",    { Text = "Auto Open Chests",      Default = false, Callback = function() end })
-ExtrasGroup:AddToggle("AutoOpen2ndChest",  { Text = "Auto Open 2nd Chest",   Default = false, Callback = function() end })
-ExtrasGroup:AddToggle("DeleteMap",         { Text = "Delete Map (FPS Boost)", Default = false, Callback = function(Value)
-	if Value then
-		DeleteMap()
-	else
-		RestoreMap()
 	end
-end })
+})
+
+Options.FailsafeTimeout = Tabs.Utility:CreateSlider({
+	Name = "Timeout",
+	Range = {1, 20},
+	Increment = 1,
+	Suffix = " min",
+	CurrentValue = 10,
+	Flag = "FailsafeTimeout",
+	Callback = function(Value)
+		if Options.Failsafe.CurrentValue then
+			ResetIdleTimer()
+			Rayfield:Notify({Title = "Failsafe", Content = "Timeout updated to " .. Value .. " min. Timer reset.", Duration = 3})
+		end
+	end
+})
+
+Tabs.Utility:CreateSection("Mastery Farm")
+
+Options.TitanMasteryFarm = Tabs.Utility:CreateToggle({
+	Name = "Titan Mastery Farm",
+	CurrentValue = false,
+	Flag = "TitanMasteryFarm",
+	Callback = function() end
+})
+
+Options.MasteryMode = Tabs.Utility:CreateDropdown({
+	Name = "Mastery Mode",
+	Options = {"Both", "ODM", "Titan"},
+	CurrentOption = {"Both"},
+	MultipleOptions = false,
+	Flag = "MasteryMode",
+	Callback = function() end
+})
+
+Tabs.Utility:CreateSection("Extras")
+
+Options.AutoSkipCutscenes = Tabs.Utility:CreateToggle({
+	Name = "Auto Skip Cutscenes",
+	CurrentValue = false,
+	Flag = "AutoSkipCutscenes",
+	Callback = function() end
+})
+
+Options.DieAtStreak = Tabs.Utility:CreateToggle({
+	Name = "Die at Streak",
+	CurrentValue = false,
+	Flag = "DieAtStreak",
+	Callback = function() end
+})
+
+Options.DieAtXStreak = Tabs.Utility:CreateSlider({
+	Name = "Die at x streak",
+	Range = {5000, 100000},
+	Increment = 1,
+	Suffix = "",
+	CurrentValue = 10000,
+	Flag = "DieAtXStreak",
+	Callback = function() end
+})
+
+Options.AutoOpenChests = Tabs.Utility:CreateToggle({
+	Name = "Auto Open Chests",
+	CurrentValue = false,
+	Flag = "AutoOpenChests",
+	Callback = function() end
+})
+
+Options.AutoOpen2ndChest = Tabs.Utility:CreateToggle({
+	Name = "Auto Open 2nd Chest",
+	CurrentValue = false,
+	Flag = "AutoOpen2ndChest",
+	Callback = function() end
+})
+
+Options.DeleteMap = Tabs.Utility:CreateToggle({
+	Name = "Delete Map (FPS Boost)",
+	CurrentValue = false,
+	Flag = "DeleteMap",
+	Callback = function(Value)
+		if Value then
+			DeleteMap()
+		else
+			RestoreMap()
+		end
+	end
+})
 
 -- ========================
 --      GLOBAL TAB
 -- ========================
 
--- LEFT SIDE: Family Roll
-local FamilyRollGroup = Tabs.Global:AddLeftGroupbox("Family Roll", "dice-5")
+Tabs.Global:CreateSection("Family Roll")
 
-FamilyRollGroup:AddToggle("AutoRoll", {
-	Text = "Auto Roll",
-	Default = false,
+Options.AutoRoll = Tabs.Global:CreateToggle({
+	Name = "Auto Roll",
+	CurrentValue = false,
+	Flag = "AutoRoll",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
-FamilyRollGroup:AddDropdown("SelectFamilies", {
-	Values = { "Yeager", "Ackerman", "Reiss", "Helos", "Fritz", "Shiki" },
-	Default = 1,
-	Multi = true,
-	Text = "Select Families",
+Options.SelectFamilies = Tabs.Global:CreateDropdown({
+	Name = "Select Families",
+	Options = {"Yeager", "Ackerman", "Reiss", "Helos", "Fritz", "Shiki"},
+	CurrentOption = {},
+	MultipleOptions = true,
+	Flag = "SelectFamilies",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
-FamilyRollGroup:AddDropdown("StopAt", {
-	Values = { "Legendary", "Mythic", "Secret" },
-	Default = 1,
-	Multi = true,
-	Text = "Stop At",
+Options.StopAt = Tabs.Global:CreateDropdown({
+	Name = "Stop At",
+	Options = {"Legendary", "Mythic", "Secret"},
+	CurrentOption = {},
+	MultipleOptions = true,
+	Flag = "StopAt",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
--- LEFT SIDE: AddOns
-local AddOnsGroup = Tabs.Global:AddLeftGroupbox("AddOns", "puzzle")
+Tabs.Global:CreateSection("AddOns")
 
-AddOnsGroup:AddToggle("AutoHideGui", {
-	Text = "Auto Hide Gui",
-	Default = false,
+Options.AutoHideGui = Tabs.Global:CreateToggle({
+	Name = "Auto Hide Gui",
+	CurrentValue = false,
+	Flag = "AutoHideGui",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
-AddOnsGroup:AddToggle("AutoClaimAchievements", {
-	Text = "Auto Claim Achievements",
-	Default = false,
+Options.AutoClaimAchievements = Tabs.Global:CreateToggle({
+	Name = "Auto Claim Achievements",
+	CurrentValue = false,
+	Flag = "AutoClaimAchievements",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
-AddOnsGroup:AddToggle("Disable3DRendering", {
-	Text = "Disable 3D Rendering",
-	Default = false,
+Options.Disable3DRendering = Tabs.Global:CreateToggle({
+	Name = "Disable 3D Rendering",
+	CurrentValue = false,
+	Flag = "Disable3DRendering",
 	Callback = function(Value)
 		if Value then
 			Disable3DRendering()
 		else
 			Enable3DRendering()
 		end
-	end,
+	end
 })
 
--- RIGHT SIDE: Webhook
-local WebhookGroup = Tabs.Global:AddRightGroupbox("Webhook", "webhook")
+Tabs.Global:CreateSection("Webhook")
 
-WebhookGroup:AddToggle("RewardWebhook", {
-	Text = "Reward Webhook",
-	Default = false,
+Options.RewardWebhook = Tabs.Global:CreateToggle({
+	Name = "Reward Webhook",
+	CurrentValue = false,
+	Flag = "RewardWebhook",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
-WebhookGroup:AddToggle("MythicFamilyWebhook", {
-	Text = "Mythic Family Webhook",
-	Default = false,
+Options.MythicFamilyWebhook = Tabs.Global:CreateToggle({
+	Name = "Mythic Family Webhook",
+	CurrentValue = false,
+	Flag = "MythicFamilyWebhook",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
-WebhookGroup:AddInput("WebhookURL", {
-	Text = "Webhook URL",
-	Default = "",
-	Placeholder = "https://discord.com/api/webhooks/...",
-	Numeric = false,
-	Finished = true,
+Options.WebhookURL = Tabs.Global:CreateInput({
+	Name = "Webhook URL",
+	CurrentValue = "",
+	PlaceholderText = "https://discord.com/api/webhooks/...",
+	RemoveTextAfterFocusLost = false,
+	Flag = "WebhookURL",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
--- RIGHT SIDE: Level
-local LevelGroup = Tabs.Global:AddRightGroupbox("Level", "trending-up")
+Tabs.Global:CreateSection("Level")
 
-LevelGroup:AddToggle("AutoPrestige", {
-	Text = "Auto Prestige",
-	Default = false,
+Options.AutoPrestige = Tabs.Global:CreateToggle({
+	Name = "Auto Prestige",
+	CurrentValue = false,
+	Flag = "AutoPrestige",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
-LevelGroup:AddSlider("PrestigeAt", {
-	Text = "Prestige at (millions)",
-	Default = 100,
-	Min = 1,
-	Max = 1000,
-	Rounding = 0,
+Options.PrestigeAt = Tabs.Global:CreateSlider({
+	Name = "Prestige at (millions)",
+	Range = {1, 1000},
+	Increment = 1,
 	Suffix = "M",
+	CurrentValue = 100,
+	Flag = "PrestigeAt",
 	Callback = function(Value)
 		-- functionality later
-	end,
+	end
 })
 
 -- ========================
 --      SETTINGS TAB
 -- ========================
 
-local MenuGroup = Tabs.Settings:AddLeftGroupbox("Menu", "wrench")
-MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
-MenuGroup:AddButton("Unload", function() Library:Unload() end)
+Tabs.Settings:CreateSection("Menu")
 
-local AutoExecGroup = Tabs.Settings:AddLeftGroupbox("Auto Execute", "play-circle")
+Tabs.Settings:CreateKeybind({
+	Name = "Menu bind",
+	CurrentKeybind = "RightShift",
+	HoldToInteract = false,
+	Flag = "MenuKeybind",
+	Callback = function(Keybind) end
+})
 
-AutoExecGroup:AddToggle("AutoExecEnabled", {
-	Text = "Auto Execute",
-	Tooltip = "Automatically re-runs this hub every time you teleport to a new server.",
-	Default = false,
+Tabs.Settings:CreateButton({
+	Name = "Unload",
+	Callback = function()
+		StopFailsafe()
+		if Options.DeleteMap and Options.DeleteMap.CurrentValue then
+			RestoreMap()
+		end
+		Enable3DRendering()
+		for _, gui in ipairs(game:GetService("CoreGui"):GetChildren()) do
+			if gui.Name == "Rayfield" then
+				gui:Destroy()
+			end
+		end
+		print("Unloaded!")
+	end
+})
+
+Tabs.Settings:CreateSection("Auto Execute")
+
+Options.AutoExecEnabled = Tabs.Settings:CreateToggle({
+	Name = "Auto Execute",
+	CurrentValue = false,
+	Flag = "AutoExecEnabled",
 	Callback = function(Value)
 		if Value then
 			local ok = QueueOnTeleport(LOADER)
-			Library:Notify({
+			Rayfield:Notify({
 				Title = "Auto Execute",
-				Description = ok and "Enabled! Hub will reload on next teleport." or "Your executor doesn't support queue_on_teleport.",
-				Time = 4,
+				Content = ok and "Enabled! Hub will reload on next teleport." or "Your executor doesn't support queue_on_teleport.",
+				Duration = 4
 			})
 			if not ok then
-				task.delay(0.1, function() Toggles.AutoExecEnabled:SetValue(false) end)
+				task.delay(0.1, function()
+					if Options.AutoExecEnabled.Set then
+						Options.AutoExecEnabled:Set(false)
+					else
+						Options.AutoExecEnabled.CurrentValue = false
+					end
+				end)
 			end
 		else
-			Library:Notify({ Title = "Auto Execute", Description = "Disabled.", Time = 3 })
+			Rayfield:Notify({Title = "Auto Execute", Content = "Disabled.", Duration = 3})
 		end
-	end,
+	end
 })
 
-Library.ToggleKeybind = Options.MenuKeybind
+Tabs.Settings:CreateSection("Theme")
 
-Library:OnUnload(function()
-	StopFailsafe()
-	if Toggles.DeleteMap and Toggles.DeleteMap.Value then
-		RestoreMap()
+Options.ThemeSelector = Tabs.Settings:CreateDropdown({
+	Name = "UI Theme",
+	Options = {"Default", "DarkRed", "Ocean", "Midnight", "Forest", "Sunset", "AOT Green"},
+	CurrentOption = {"Default"},
+	MultipleOptions = false,
+	Flag = "ThemeSelector",
+	Callback = function(Value)
+		local selected = Value[1]
+		SetRayfieldTheme(selected)
 	end
-	Enable3DRendering()
-	print("Unloaded!")
+})
+
+-- ========================
+--   CLEANUP & LOAD
+-- ========================
+
+-- Apply saved theme on load
+task.delay(1, function()
+	local savedTheme = Options.ThemeSelector and Options.ThemeSelector.CurrentValue
+	if savedTheme and savedTheme[1] and savedTheme[1] ~= "Default" then
+		SetRayfieldTheme(savedTheme[1])
+	end
 end)
 
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
-ThemeManager:SetFolder("ZangetsuHub")
-SaveManager:SetFolder("ZangetsuHub/AOT-R")
-SaveManager:BuildConfigSection(Tabs.Settings)
-ThemeManager:ApplyToTab(Tabs.Settings)
-SaveManager:LoadAutoloadConfig()
+Rayfield:Notify({
+	Title = "Zangetsu Hub",
+	Content = "Rayfield UI loaded successfully!",
+	Duration = 5
+})
