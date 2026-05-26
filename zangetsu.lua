@@ -819,6 +819,7 @@ local Options = {}
 local ConfigSystem = {}
 ConfigSystem.Folder = "ZangetsuHub/Configs"
 ConfigSystem.AutoloadFile = "ZangetsuHub/autoload_config.txt"
+ConfigSystem.PendingAutoload = nil
 
 function ConfigSystem:EnsureFolder()
 	if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
@@ -854,7 +855,7 @@ function ConfigSystem:Save(name)
 	writefile(self:GetPath(name), HttpService:JSONEncode(data))
 end
 
-function ConfigSystem:Load(name)
+function ConfigSystem:Load(name, silent)
 	local path = self:GetPath(name)
 	if not isfile(path) then return false, "File not found" end
 	local ok, data = pcall(function()
@@ -865,22 +866,28 @@ function ConfigSystem:Load(name)
 
 	local loadedCount = 0
 	local failCount = 0
+	local failLog = {}
 	for flag, value in pairs(data) do
 		local option = Options[flag]
 		if option and option.Set then
-			local setOk = pcall(function()
+			local setOk, setErr = pcall(function()
 				option:Set(value)
 			end)
 			if setOk then
 				loadedCount = loadedCount + 1
 			else
 				failCount = failCount + 1
+				table.insert(failLog, flag .. ": " .. tostring(setErr))
 			end
 		else
 			failCount = failCount + 1
+			table.insert(failLog, flag .. ": option missing or no :Set()")
 		end
 	end
-	return true, loadedCount, failCount
+	if not silent then
+		return true, loadedCount, failCount, failLog
+	end
+	return true
 end
 
 function ConfigSystem:Delete(name)
@@ -1526,7 +1533,6 @@ Tabs.Settings:CreateButton({
 	Callback = function()
 		local name = ConfigNameInput.CurrentValue
 		if not name or name:gsub("%s+", "") == "" then
-			-- Try to use the currently selected load dropdown
 			local selected = ConfigLoadDropdown.CurrentOption
 			if selected and selected[1] then
 				name = selected[1]
@@ -1557,9 +1563,9 @@ ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
 	Callback = function(Value)
 		local name = Value[1]
 		if name then
-			local ok, loaded, failed = ConfigSystem:Load(name)
+			local ok, loaded, failed, log = ConfigSystem:Load(name)
 			if ok then
-				Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings)', Duration = 3})
+				Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings, ' .. tostring(failed) .. ' skipped)', Duration = 3})
 			else
 				Rayfield:Notify({Title = "Config Error", Content = "Failed to load '" .. name .. "': " .. tostring(loaded), Duration = 4})
 			end
@@ -1620,38 +1626,73 @@ task.delay(1, function()
 	end
 end)
 
--- Robust Autoload: waits 3s then attempts to load, with retry logic for teleports
-task.delay(3, function()
+-- ROBUST AUTOLOAD: polls until Options are ready, then loads
+local function AttemptAutoload()
 	local autoload = ConfigSystem:GetAutoload()
 	if not autoload then return end
 
-	local attempts = 0
-	local maxAttempts = 3
-	local success, loaded, failed
-
-	while attempts < maxAttempts do
-		attempts = attempts + 1
-		success, loaded, failed = ConfigSystem:Load(autoload)
-		if success then break end
-		task.wait(1)
+	-- Check if Options table is actually populated (Rayfield creates them async)
+	local optionCount = 0
+	for _ in pairs(Options) do optionCount = optionCount + 1 end
+	if optionCount < 10 then
+		-- Options not ready yet, retry in 1 second
+		return false
 	end
 
-	if success then
+	-- Check if the config file exists
+	if not isfile(ConfigSystem:GetPath(autoload)) then
 		Rayfield:Notify({
-			Title = "Config Manager",
-			Content = 'Autoloaded "' .. autoload .. '" (' .. tostring(loaded) .. ' settings)',
+			Title = "Autoload Failed",
+			Content = 'Config "' .. autoload .. '" not found. Resetting autoload.',
 			Duration = 5
 		})
+		ConfigSystem:ResetAutoload()
+		return true
+	end
+
+	-- Attempt to load
+	local ok, loaded, failed, log = ConfigSystem:Load(autoload, true)
+	if ok then
+		-- Force refresh all UI elements to match loaded values
+		for flag, option in pairs(Options) do
+			if option and option.CurrentValue ~= nil and option.Set then
+				pcall(function()
+					option:Set(option.CurrentValue)
+				end)
+			end
+		end
+
+		Rayfield:Notify({
+			Title = "Config Autoloaded",
+			Content = '"' .. autoload .. '" loaded successfully! (' .. tostring(loaded) .. ' settings)',
+			Duration = 5
+		})
+
+		-- Update dropdowns to show the loaded config
 		pcall(function()
 			ConfigLoadDropdown:Set({autoload})
 			ConfigAutoloadDropdown:Set({autoload})
 		end)
 	else
 		Rayfield:Notify({
-			Title = "Config Manager",
-			Content = 'Autoload failed for "' .. autoload .. '": ' .. tostring(loaded),
+			Title = "Autoload Failed",
+			Content = 'Could not load "' .. autoload .. '": ' .. tostring(loaded),
 			Duration = 5
 		})
+	end
+	return true
+end
+
+-- Start polling for autoload
+task.spawn(function()
+	local maxWait = 30  -- max 30 seconds of polling
+	local elapsed = 0
+	while elapsed < maxWait do
+		if AttemptAutoload() then
+			break
+		end
+		task.wait(1)
+		elapsed = elapsed + 1
 	end
 end)
 
