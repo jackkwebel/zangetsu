@@ -9,7 +9,7 @@ local Window = Rayfield:CreateWindow({
 	LoadingTitle = "Zangetsu Hub",
 	LoadingSubtitle = "AOT:R",
 	ConfigurationSaving = {
-		Enabled = true,
+		Enabled = false,
 		FolderName = "ZangetsuHub",
 		FileName = "AOT-R"
 	},
