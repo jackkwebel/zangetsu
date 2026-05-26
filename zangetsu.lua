@@ -856,21 +856,31 @@ end
 
 function ConfigSystem:Load(name)
 	local path = self:GetPath(name)
-	if not isfile(path) then return false end
+	if not isfile(path) then return false, "File not found" end
 	local ok, data = pcall(function()
 		return HttpService:JSONDecode(readfile(path))
 	end)
-	if not ok or type(data) ~= "table" then return false end
+	if not ok then return false, "JSON decode error: " .. tostring(data) end
+	if type(data) ~= "table" then return false, "Corrupted data" end
 
+	local loadedCount = 0
+	local failCount = 0
 	for flag, value in pairs(data) do
 		local option = Options[flag]
 		if option and option.Set then
-			pcall(function()
+			local setOk = pcall(function()
 				option:Set(value)
 			end)
+			if setOk then
+				loadedCount = loadedCount + 1
+			else
+				failCount = failCount + 1
+			end
+		else
+			failCount = failCount + 1
 		end
 	end
-	return true
+	return true, loadedCount, failCount
 end
 
 function ConfigSystem:Delete(name)
@@ -1483,8 +1493,6 @@ Options.ThemeSelector = Tabs.Settings:CreateDropdown({
 	end
 })
 
-
-
 Tabs.Settings:CreateSection("Config Manager")
 
 ConfigNameInput = Tabs.Settings:CreateInput({
@@ -1513,6 +1521,33 @@ Tabs.Settings:CreateButton({
 	end
 })
 
+Tabs.Settings:CreateButton({
+	Name = "♻️ Overwrite Config",
+	Callback = function()
+		local name = ConfigNameInput.CurrentValue
+		if not name or name:gsub("%s+", "") == "" then
+			-- Try to use the currently selected load dropdown
+			local selected = ConfigLoadDropdown.CurrentOption
+			if selected and selected[1] then
+				name = selected[1]
+			else
+				Rayfield:Notify({Title = "Config Manager", Content = "Enter a config name or select one from Load Config first!", Duration = 3})
+				return
+			end
+		end
+		if not isfile(ConfigSystem:GetPath(name)) then
+			Rayfield:Notify({Title = "Config Manager", Content = '"' .. name .. '" does not exist. Use Save Config instead.', Duration = 3})
+			return
+		end
+		ConfigSystem:Save(name)
+		Rayfield:Notify({Title = "Config Overwritten", Content = '"' .. name .. '" has been overwritten with current settings.', Duration = 3})
+
+		local list = ConfigSystem:List()
+		ConfigLoadDropdown:Refresh(list)
+		ConfigAutoloadDropdown:Refresh(list)
+	end
+})
+
 ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
 	Name = "📂 Load Config",
 	Options = ConfigSystem:List(),
@@ -1521,8 +1556,13 @@ ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
 	Flag = "ConfigLoadDropdown",
 	Callback = function(Value)
 		local name = Value[1]
-		if name and ConfigSystem:Load(name) then
-			Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded!', Duration = 3})
+		if name then
+			local ok, loaded, failed = ConfigSystem:Load(name)
+			if ok then
+				Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings)', Duration = 3})
+			else
+				Rayfield:Notify({Title = "Config Error", Content = "Failed to load '" .. name .. "': " .. tostring(loaded), Duration = 4})
+			end
 		end
 	end
 })
@@ -1537,7 +1577,7 @@ ConfigAutoloadDropdown = Tabs.Settings:CreateDropdown({
 		local name = Value[1]
 		if name then
 			ConfigSystem:SetAutoload(name)
-			Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload next time.', Duration = 3})
+			Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload on next join/teleport.', Duration = 3})
 		end
 	end
 })
@@ -1580,26 +1620,38 @@ task.delay(1, function()
 	end
 end)
 
--- Autoload config
-task.delay(2, function()
+-- Robust Autoload: waits 3s then attempts to load, with retry logic for teleports
+task.delay(3, function()
 	local autoload = ConfigSystem:GetAutoload()
-	if autoload then
-		if ConfigSystem:Load(autoload) then
-			Rayfield:Notify({
-				Title = "Config Manager",
-				Content = 'Autoloaded config: "' .. autoload .. '"',
-				Duration = 5
-			})
-			pcall(function()
-				ConfigAutoloadDropdown:Set({autoload})
-			end)
-		else
-			Rayfield:Notify({
-				Title = "Config Manager",
-				Content = 'Failed to autoload "' .. autoload .. '" (file missing or corrupted)',
-				Duration = 5
-			})
-		end
+	if not autoload then return end
+
+	local attempts = 0
+	local maxAttempts = 3
+	local success, loaded, failed
+
+	while attempts < maxAttempts do
+		attempts = attempts + 1
+		success, loaded, failed = ConfigSystem:Load(autoload)
+		if success then break end
+		task.wait(1)
+	end
+
+	if success then
+		Rayfield:Notify({
+			Title = "Config Manager",
+			Content = 'Autoloaded "' .. autoload .. '" (' .. tostring(loaded) .. ' settings)',
+			Duration = 5
+		})
+		pcall(function()
+			ConfigLoadDropdown:Set({autoload})
+			ConfigAutoloadDropdown:Set({autoload})
+		end)
+	else
+		Rayfield:Notify({
+			Title = "Config Manager",
+			Content = 'Autoload failed for "' .. autoload .. '": ' .. tostring(loaded),
+			Duration = 5
+		})
 	end
 end)
 
