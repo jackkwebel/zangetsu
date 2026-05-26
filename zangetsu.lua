@@ -830,10 +830,9 @@ end
 function ConfigSystem:CleanName(name)
 	-- Aggressive trim: spaces, newlines, BOM, null bytes
 	name = tostring(name or "")
-	name = name:gsub("[
-	 ]+", "")  -- remove all whitespace
-	name = name:gsub("%z", "")            -- remove null bytes
-	name = name:gsub("98791", "")   -- remove BOM
+	name = name:gsub("%s+", "")           -- remove ALL whitespace
+	name = name:gsub("%z", "")             -- remove null bytes
+	name = name:gsub("\239\187\191", "")   -- remove UTF-8 BOM
 	return name
 end
 
@@ -847,7 +846,8 @@ function ConfigSystem:FindFileExact(name)
 
 	for _, filepath in ipairs(files) do
 		if type(filepath) == "string" then
-			local basename = filepath:match("([^/\]+)%.json$")
+			-- Match basename from either / or \ separated paths
+			local basename = filepath:match("([^/\\]+)%.json$")
 			if basename and basename:lower() == name:lower() then
 				return filepath  -- return exact path from listfiles
 			end
@@ -862,7 +862,7 @@ function ConfigSystem:List()
 	local names = {}
 	for _, filepath in ipairs(files) do
 		if type(filepath) == "string" then
-			local basename = filepath:match("([^/\]+)%.json$")
+			local basename = filepath:match("([^/\\]+)%.json$")
 			if basename then table.insert(names, basename) end
 		end
 	end
