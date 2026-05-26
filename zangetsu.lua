@@ -804,6 +804,438 @@ local function Enable3DRendering()
 end
 
 -- ========================
+--   AUTO START SYSTEM
+-- ========================
+
+local AutoStart = {}
+AutoStart.Active = false
+AutoStart.Timer = nil
+AutoStart.CurrentType = "Missions" -- "Missions" or "Raids"
+
+-- UI Path helpers
+local function GetMissionsFrame()
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then return nil end
+    local interface = playerGui:FindFirstChild("Interface")
+    if not interface then return nil end
+    return interface:FindFirstChild("Missions")
+end
+
+local function GetMainFrame(missions)
+    if not missions then return nil end
+    return missions:FindFirstChild("Main")
+end
+
+-- Click a button by firing its connections
+local function ClickButton(button)
+    if not button or not button:IsA("GuiButton") then return false end
+    
+    local success = pcall(function()
+        -- Try multiple methods to trigger the click
+        for _, conn in ipairs(getconnections(button.MouseButton1Click)) do
+            conn:Fire()
+        end
+        for _, conn in ipairs(getconnections(button.Activated)) do
+            conn:Fire()
+        end
+        -- Also try firing the event directly
+        button.MouseButton1Click:Fire()
+    end)
+    
+    return success
+end
+
+-- Find and click a button by text label
+local function ClickButtonByTitle(parent, titleText)
+    if not parent then return false end
+    
+    for _, child in ipairs(parent:GetDescendants()) do
+        if child:IsA("TextLabel") and child.Text:upper():find(titleText:upper()) then
+            -- Find the button in this frame's parent or siblings
+            local frame = child.Parent
+            for _, sibling in ipairs(frame:GetChildren()) do
+                if sibling:IsA("GuiButton") then
+                    return ClickButton(sibling)
+                end
+            end
+            -- Check if the label's parent is the button
+            if frame:IsA("GuiButton") then
+                return ClickButton(frame)
+            end
+        end
+    end
+    
+    return false
+end
+
+-- Select Type (Missions/Raids/Waves)
+function AutoStart:SelectType(typeName)
+    local missions = GetMissionsFrame()
+    local main = GetMainFrame(missions)
+    if not main then return false end
+    
+    -- Find the Selection frame
+    local selection = main:FindFirstChild("Selection")
+    if not selection then
+        -- Might be in a different location, scan for it
+        for _, child in ipairs(main:GetDescendants()) do
+            if child.Name == "Selection" then
+                selection = child
+                break
+            end
+        end
+    end
+    
+    if not selection then return false end
+    
+    -- Find the button with matching title
+    for _, frame in ipairs(selection:GetChildren()) do
+        if frame:IsA("Frame") then
+            local title = frame:FindFirstChild("Title")
+            if title and title:IsA("TextLabel") and title.Text:upper() == typeName:upper() then
+                local button = frame:FindFirstChild("Interact")
+                if button and button:IsA("GuiButton") then
+                    ClickButton(button)
+                    self.CurrentType = typeName
+                    return true
+                end
+            end
+        end
+    end
+    
+    return false
+end
+
+-- Select Map
+function AutoStart:SelectMap(mapName)
+    local missions = GetMissionsFrame()
+    local main = GetMainFrame(missions)
+    if not main then return false end
+    
+    local mapsFrame = main:FindFirstChild("Maps")
+    if not mapsFrame then return false end
+    
+    local mapsContainer = mapsFrame:FindFirstChild("Maps")
+    if not mapsContainer then return false end
+    
+    -- Find map frame (e.g., "Shiganshina_Missions" or "Shiganshina_Raids")
+    local suffix = self.CurrentType == "Raids" and "_Raids" or "_Missions"
+    local mapFrameName = mapName .. suffix
+    
+    local mapFrame = mapsContainer:FindFirstChild(mapFrameName)
+    if not mapFrame then
+        -- Try without suffix or with different naming
+        for _, child in ipairs(mapsContainer:GetChildren()) do
+            if child.Name:lower():find(mapName:lower()) then
+                mapFrame = child
+                break
+            end
+        end
+    end
+    
+    if not mapFrame then return false end
+    
+    -- Click the map frame (it's likely clickable or has a button)
+    if mapFrame:IsA("GuiButton") then
+        return ClickButton(mapFrame)
+    end
+    
+    -- Find button inside
+    for _, child in ipairs(mapFrame:GetDescendants()) do
+        if child:IsA("GuiButton") then
+            return ClickButton(child)
+        end
+    end
+    
+    -- Try clicking the frame itself if it has input
+    local success = pcall(function()
+        -- Simulate click position
+        local absPos = mapFrame.AbsolutePosition
+        local absSize = mapFrame.AbsoluteSize
+        local center = absPos + (absSize / 2)
+        
+        -- Fire input events
+        local inputObject = {
+            UserInputType = Enum.UserInputType.MouseButton1,
+            Position = center,
+            KeyCode = Enum.KeyCode.Unknown
+        }
+        
+        for _, conn in ipairs(getconnections(mapFrame.InputBegan)) do
+            conn:Fire(inputObject, false)
+        end
+    end)
+    
+    return success
+end
+
+-- Select Objective
+function AutoStart:SelectObjective(objectiveName)
+    local missions = GetMissionsFrame()
+    local main = GetMainFrame(missions)
+    if not main then return false end
+    
+    -- Objectives are shown after clicking "Objectives_Missions" button
+    -- First, make sure objectives panel is visible
+    local objectivesPanel = main:FindFirstChild("Objectives_Buttons")
+    if not objectivesPanel then return false end
+    
+    -- Find the objective button
+    for _, frame in ipairs(objectivesPanel:GetDescendants()) do
+        if frame:IsA("Frame") then
+            local title = frame:FindFirstChild("Title")
+            if title and title:IsA("TextLabel") and title.Text:upper() == objectiveName:upper() then
+                local button = frame:FindFirstChild("Interact")
+                if button and button:IsA("GuiButton") then
+                    return ClickButton(button)
+                end
+            end
+        end
+    end
+    
+    return false
+end
+
+-- Select Difficulty
+function AutoStart:SelectDifficulty(difficultyName)
+    local missions = GetMissionsFrame()
+    local main = GetMainFrame(missions)
+    if not main then return false end
+    
+    local info = main:FindFirstChild("Info")
+    if not info then return false end
+    
+    local difficultyFrame = info:FindFirstChild("Difficulty")
+    if not difficultyFrame then return false end
+    
+    local difficulties = difficultyFrame:FindFirstChild("Difficulties")
+    if not difficulties then return false end
+    
+    -- Find difficulty label/button
+    for _, child in ipairs(difficulties:GetChildren()) do
+        if child:IsA("TextLabel") and child.Text:upper():find(difficultyName:upper()) then
+            -- The label itself might be clickable, or parent frame
+            if child:IsA("GuiButton") then
+                return ClickButton(child)
+            end
+            
+            local parent = child.Parent
+            if parent and parent:IsA("GuiButton") then
+                return ClickButton(parent)
+            end
+            
+            -- Try clicking the text label's position
+            return ClickButtonByTitle(difficulties, difficultyName)
+        end
+    end
+    
+    return false
+end
+
+-- Select Modifiers
+function AutoStart:SetModifiers(modifierList)
+    local missions = GetMissionsFrame()
+    local main = GetMainFrame(missions)
+    if not main then return false end
+    
+    local options = main:FindFirstChild("Options")
+    if not options then return false end
+    
+    local successCount = 0
+    
+    for _, modifierName in ipairs(modifierList) do
+        local found = false
+        
+        for _, frame in ipairs(options:GetDescendants()) do
+            if frame:IsA("Frame") then
+                local title = frame:FindFirstChild("Title")
+                if title and title:IsA("TextLabel") and title.Text:upper() == modifierName:upper() then
+                    local button = frame:FindFirstChild("Interact")
+                    if button and button:IsA("GuiButton") then
+                        if ClickButton(button) then
+                            successCount = successCount + 1
+                        end
+                        found = true
+                        break
+                    end
+                end
+            end
+        end
+        
+        if not found then
+            warn("Modifier not found: " .. modifierName)
+        end
+    end
+    
+    return successCount > 0
+end
+
+-- Click Start/Create
+function AutoStart:ClickStart()
+    local missions = GetMissionsFrame()
+    local main = GetMainFrame(missions)
+    if not main then return false end
+    
+    local buttons = main:FindFirstChild("Buttons")
+    if not buttons then return false end
+    
+    -- Find Creation button based on type
+    local buttonName = "Creation_" .. self.CurrentType
+    local createButton = buttons:FindFirstChild(buttonName)
+    
+    if not createButton then
+        -- Try generic names
+        for _, child in ipairs(buttons:GetChildren()) do
+            if child.Name:lower():find("creation") or child.Name:lower():find("start") then
+                createButton = child
+                break
+            end
+        end
+    end
+    
+    if createButton and createButton:IsA("GuiButton") then
+        return ClickButton(createButton)
+    end
+    
+    return false
+end
+
+-- Check if in lobby (missions UI is accessible)
+function AutoStart:IsInLobby()
+    return GetMissionsFrame() ~= nil
+end
+
+-- Main Auto Start Logic
+function AutoStart:Execute()
+    if not self:IsInLobby() then
+        Rayfield:Notify({
+            Title = "Auto Start",
+            Content = "Not in lobby. Waiting...",
+            Duration = 3
+        })
+        return false
+    end
+    
+    local typeName = Options.AutoStartType.CurrentValue[1]
+    local mapName = Options.AutoStartMap.CurrentValue[1]
+    local objectiveName = Options.AutoStartObjective.CurrentValue[1]
+    local difficultyName = Options.AutoStartDifficulty.CurrentValue[1]
+    local modifiers = Options.AutoStartModifiers.CurrentValue or {}
+    
+    Rayfield:Notify({
+        Title = "Auto Start",
+        Content = "Starting " .. typeName .. " on " .. mapName .. "...",
+        Duration = 3
+    })
+    
+    -- Step 1: Select Type
+    task.wait(0.2)
+    if not self:SelectType(typeName) then
+        warn("Failed to select type: " .. typeName)
+    end
+    
+    -- Step 2: Select Map
+    task.wait(0.3)
+    if not self:SelectMap(mapName) then
+        warn("Failed to select map: " .. mapName)
+    end
+    
+    -- Step 3: Select Objective (for missions)
+    if typeName == "Missions" then
+        task.wait(0.3)
+        if not self:SelectObjective(objectiveName) then
+            warn("Failed to select objective: " .. objectiveName)
+        end
+    end
+    
+    -- Step 4: Select Difficulty
+    task.wait(0.3)
+    if not self:SelectDifficulty(difficultyName) then
+        warn("Failed to select difficulty: " .. difficultyName)
+    end
+    
+    -- Step 5: Set Modifiers
+    if #modifiers > 0 then
+        task.wait(0.3)
+        self:SetModifiers(modifiers)
+    end
+    
+    -- Step 6: Click Start
+    task.wait(0.5)
+    if self:ClickStart() then
+        Rayfield:Notify({
+            Title = "Auto Start",
+            Content = typeName .. " started!",
+            Duration = 3
+        })
+        return true
+    else
+        Rayfield:Notify({
+            Title = "Auto Start",
+            Content = "Failed to click start button.",
+            Duration = 3
+        })
+        return false
+    end
+end
+
+-- Timer-based auto start
+function AutoStart:StartTimer()
+    if self.Timer then
+        self.Timer:Disconnect()
+        self.Timer = nil
+    end
+    
+    local startTime = tick()
+    local delaySeconds = Options.StartAfterXSeconds.CurrentValue or 0
+    
+    self.Timer = RunService.Heartbeat:Connect(function()
+        if not Options.AutoStartToggle.CurrentValue then
+            self:StopTimer()
+            return
+        end
+        
+        if tick() - startTime >= delaySeconds then
+            self:StopTimer()
+            self:Execute()
+        end
+    end)
+end
+
+function AutoStart:StopTimer()
+    if self.Timer then
+        self.Timer:Disconnect()
+        self.Timer = nil
+    end
+end
+
+-- Monitor for lobby and auto-trigger
+task.spawn(function()
+    local wasInLobby = false
+    
+    while true do
+        task.wait(1)
+        
+        if not Options.AutoStartToggle.CurrentValue then
+            wasInLobby = false
+            continue
+        end
+        
+        local inLobby = AutoStart:IsInLobby()
+        
+        if inLobby and not wasInLobby then
+            -- Just entered lobby, start timer
+            wasInLobby = true
+            AutoStart:StartTimer()
+        elseif not inLobby and wasInLobby then
+            -- Left lobby, stop timer
+            wasInLobby = false
+            AutoStart:StopTimer()
+        end
+    end
+end)
+
+-- ========================
 --        TABS
 -- ========================
 
@@ -1067,7 +1499,31 @@ Options.AutoStartToggle = Tabs.Main:CreateToggle({
 	Name = "Auto Start",
 	CurrentValue = false,
 	Flag = "AutoStartToggle",
-	Callback = function() end
+	Callback = function(Value)
+		if Value then
+			if AutoStart:IsInLobby() then
+				AutoStart:StartTimer()
+				Rayfield:Notify({
+					Title = "Auto Start",
+					Content = "Will start in " .. Options.StartAfterXSeconds.CurrentValue .. " seconds...",
+					Duration = 3
+				})
+			else
+				Rayfield:Notify({
+					Title = "Auto Start",
+					Content = "Waiting for lobby...",
+					Duration = 3
+				})
+			end
+		else
+			AutoStart:StopTimer()
+			Rayfield:Notify({
+				Title = "Auto Start",
+				Content = "Cancelled.",
+				Duration = 3
+			})
+		end
+	end
 })
 
 Options.StartAfterXSeconds = Tabs.Main:CreateSlider({
