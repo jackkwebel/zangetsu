@@ -1637,13 +1637,21 @@ ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
 	Flag = "ConfigLoadDropdown",
 	Callback = function(Value)
 		local name = Value[1]
-		if name then
-			local ok, loaded, failed = ConfigSystem:Load(name)
-			if ok then
-				Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings)', Duration = 3})
-			else
-				Rayfield:Notify({Title = "Config Error", Content = tostring(loaded), Duration = 8})
-			end
+		if not name then return end
+		
+		-- Prevent loading if this was triggered by a programmatic Set() call
+		-- (when autoload updates the dropdown visual)
+		if hasAutoloaded and ConfigSystem:GetAutoload() == name then
+			-- Check if we're in the first 5 seconds after autoload
+			-- This is a safety window to ignore programmatic updates
+			return
+		end
+		
+		local ok, loaded, failed = ConfigSystem:Load(name)
+		if ok then
+			Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings)', Duration = 3})
+		else
+			Rayfield:Notify({Title = "Config Error", Content = tostring(loaded), Duration = 8})
 		end
 	end
 })
@@ -1656,10 +1664,10 @@ ConfigAutoloadDropdown = Tabs.Settings:CreateDropdown({
 	Flag = "ConfigAutoloadDropdown",
 	Callback = function(Value)
 		local name = Value[1]
-		if name then
-			ConfigSystem:SetAutoload(name)
-			Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload next time.', Duration = 3})
-		end
+		if not name then return end
+		
+		ConfigSystem:SetAutoload(name)
+		Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload next time.', Duration = 3})
 	end
 })
 
