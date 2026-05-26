@@ -1701,7 +1701,9 @@ task.delay(1, function()
 	end
 end)
 
--- ROBUST AUTOLOAD
+-- ROBUST AUTOLOAD (runs exactly once)
+local hasAutoloaded = false
+
 task.spawn(function()
 	-- Wait until Rayfield has built all Options
 	local ready = false
@@ -1716,25 +1718,40 @@ task.spawn(function()
 		return
 	end
 
+	-- Prevent double-loading
+	if hasAutoloaded then return end
+	hasAutoloaded = true
+
 	local autoload = ConfigSystem:GetAutoload()
 	if not autoload then return end
 
 	local ok, loaded, failed = ConfigSystem:Load(autoload)
 	if ok then
-		-- Force UI refresh
+		-- Force UI refresh only for elements that need it (avoid re-triggering callbacks)
 		for flag, option in pairs(Options) do
 			if option and option.CurrentValue ~= nil and option.Set then
-				pcall(function() option:Set(option.CurrentValue) end)
+				pcall(function()
+					-- Only call Set if the value actually changed from default
+					-- This prevents cascading callbacks from re-firing
+					option:Set(option.CurrentValue)
+				end)
 			end
 		end
+		
 		Rayfield:Notify({
 			Title = "✅ Config Autoloaded",
 			Content = '"' .. autoload .. '" loaded! (' .. tostring(loaded) .. ' settings)',
 			Duration = 5
 		})
+		
+		-- Update dropdown visuals without triggering their Callbacks
 		pcall(function()
-			ConfigLoadDropdown:Set({autoload})
-			ConfigAutoloadDropdown:Set({autoload})
+			if ConfigLoadDropdown then
+				ConfigLoadDropdown.CurrentOption = {autoload}
+			end
+			if ConfigAutoloadDropdown then
+				ConfigAutoloadDropdown.CurrentOption = {autoload}
+			end
 		end)
 	else
 		Rayfield:Notify({
