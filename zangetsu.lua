@@ -2,6 +2,10 @@
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Prevent double-execution if injector fires twice
+if getgenv().ZangetsuHubLoaded then return end
+getgenv().ZangetsuHubLoaded = true
+
 local HUB_SCRIPT_URL = "https://raw.githubusercontent.com/jackkwebel/zangetsu/main/zangetsu.lua"
 
 local Window = Rayfield:CreateWindow({
@@ -1639,14 +1643,6 @@ ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
 		local name = Value[1]
 		if not name then return end
 		
-		-- Prevent loading if this was triggered by a programmatic Set() call
-		-- (when autoload updates the dropdown visual)
-		if hasAutoloaded and ConfigSystem:GetAutoload() == name then
-			-- Check if we're in the first 5 seconds after autoload
-			-- This is a safety window to ignore programmatic updates
-			return
-		end
-		
 		local ok, loaded, failed = ConfigSystem:Load(name)
 		if ok then
 			Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings)', Duration = 3})
@@ -1739,8 +1735,6 @@ task.spawn(function()
 		for flag, option in pairs(Options) do
 			if option and option.CurrentValue ~= nil and option.Set then
 				pcall(function()
-					-- Only call Set if the value actually changed from default
-					-- This prevents cascading callbacks from re-firing
 					option:Set(option.CurrentValue)
 				end)
 			end
