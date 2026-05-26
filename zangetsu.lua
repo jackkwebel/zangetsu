@@ -1337,19 +1337,42 @@ Options.AutoExecEnabled = Tabs.Settings:CreateToggle({
 	Flag = "AutoExecEnabled",
 	Callback = function(Value)
 		if Value then
-			local ok = QueueOnTeleport(LOADER)
-			Rayfield:Notify({
-				Title = "Auto Execute",
-				Content = ok and "Enabled! Hub will reload on next teleport." or "Your executor doesn't support queue_on_teleport.",
-				Duration = 4
-			})
-			if not ok then
+			-- Build the script string that should re-run after teleport
+			local scriptString = string.format(
+				'loadstring(game:HttpGet("%s"))()',
+				HUB_SCRIPT_URL
+			)
+
+			-- Try multiple executor APIs
+			local ok, err = pcall(function()
+				if type(queue_on_teleport) == "function" then
+					queue_on_teleport(scriptString)
+				elseif type(syn) == "table" and type(syn.queue_on_teleport) == "function" then
+					syn.queue_on_teleport(scriptString)
+				elseif type(fluxus) == "table" and type(fluxus.queue_on_teleport) == "function" then
+					fluxus.queue_on_teleport(scriptString)
+				elseif type(getgenv().queue_on_teleport) == "function" then
+					getgenv().queue_on_teleport(scriptString)
+				else
+					error("Executor does not support queue_on_teleport")
+				end
+			end)
+
+			if ok then
+				Rayfield:Notify({
+					Title = "Auto Execute",
+					Content = "Enabled! Hub will reload on next teleport.",
+					Duration = 4
+				})
+			else
+				Rayfield:Notify({
+					Title = "Auto Execute Error",
+					Content = "Your executor doesn't support queue_on_teleport.",
+					Duration = 4
+				})
+				-- Turn the toggle back off safely
 				task.delay(0.1, function()
-					if Options.AutoExecEnabled.Set then
-						Options.AutoExecEnabled:Set(false)
-					else
-						Options.AutoExecEnabled.CurrentValue = false
-					end
+					Options.AutoExecEnabled:Set(false)
 				end)
 			end
 		else
