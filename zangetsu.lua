@@ -813,6 +813,94 @@ local Tabs = {
 local Options = {}
 
 -- ========================
+--   CONFIG MANAGER ENGINE
+-- ========================
+
+local ConfigSystem = {}
+ConfigSystem.Folder = "ZangetsuHub/Configs"
+ConfigSystem.AutoloadFile = "ZangetsuHub/autoload_config.txt"
+
+function ConfigSystem:EnsureFolder()
+	if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
+	if not isfolder(self.Folder) then makefolder(self.Folder) end
+end
+
+function ConfigSystem:GetPath(name)
+	return self.Folder .. "/" .. name .. ".json"
+end
+
+function ConfigSystem:List()
+	if not isfolder(self.Folder) then return {} end
+	local ok, files = pcall(listfiles, self.Folder)
+	if not ok or type(files) ~= "table" then return {} end
+	local names = {}
+	for _, file in ipairs(files) do
+		if type(file) == "string" then
+			local name = file:match("([^/\]+)%.json$")
+			if name then table.insert(names, name) end
+		end
+	end
+	return names
+end
+
+function ConfigSystem:Save(name)
+	self:EnsureFolder()
+	local data = {}
+	for flag, option in pairs(Options) do
+		if option and option.CurrentValue ~= nil then
+			data[flag] = option.CurrentValue
+		end
+	end
+	writefile(self:GetPath(name), HttpService:JSONEncode(data))
+end
+
+function ConfigSystem:Load(name)
+	local path = self:GetPath(name)
+	if not isfile(path) then return false end
+	local ok, data = pcall(function()
+		return HttpService:JSONDecode(readfile(path))
+	end)
+	if not ok or type(data) ~= "table" then return false end
+
+	for flag, value in pairs(data) do
+		local option = Options[flag]
+		if option and option.Set then
+			pcall(function()
+				option:Set(value)
+			end)
+		end
+	end
+	return true
+end
+
+function ConfigSystem:Delete(name)
+	local path = self:GetPath(name)
+	if isfile(path) then delfile(path) end
+end
+
+function ConfigSystem:SetAutoload(name)
+	if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
+	writefile(self.AutoloadFile, name)
+end
+
+function ConfigSystem:GetAutoload()
+	if isfile(self.AutoloadFile) then
+		local name = readfile(self.AutoloadFile)
+		return name ~= "" and name or nil
+	end
+	return nil
+end
+
+function ConfigSystem:ResetAutoload()
+	if isfile(self.AutoloadFile) then delfile(self.AutoloadFile) end
+end
+
+-- Config UI elements (declared here, created after all Options are defined)
+local ConfigNameInput, ConfigLoadDropdown, ConfigAutoloadDropdown
+
+
+
+-- ========================
 --        MAIN TAB
 -- ========================
 
@@ -1395,6 +1483,91 @@ Options.ThemeSelector = Tabs.Settings:CreateDropdown({
 	end
 })
 
+
+
+Tabs.Settings:CreateSection("Config Manager")
+
+ConfigNameInput = Tabs.Settings:CreateInput({
+	Name = "Config Name",
+	CurrentValue = "",
+	PlaceholderText = "Enter name...",
+	RemoveTextAfterFocusLost = false,
+	Flag = "ConfigNameInput",
+	Callback = function() end
+})
+
+Tabs.Settings:CreateButton({
+	Name = "💾 Save Config",
+	Callback = function()
+		local name = ConfigNameInput.CurrentValue
+		if not name or name:gsub("%s+", "") == "" then
+			Rayfield:Notify({Title = "Config Manager", Content = "Enter a config name first!", Duration = 3})
+			return
+		end
+		ConfigSystem:Save(name)
+		Rayfield:Notify({Title = "Config Saved", Content = '"' .. name .. '" saved successfully!', Duration = 3})
+
+		local list = ConfigSystem:List()
+		ConfigLoadDropdown:Refresh(list)
+		ConfigAutoloadDropdown:Refresh(list)
+	end
+})
+
+ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
+	Name = "📂 Load Config",
+	Options = ConfigSystem:List(),
+	CurrentOption = {},
+	MultipleOptions = false,
+	Flag = "ConfigLoadDropdown",
+	Callback = function(Value)
+		local name = Value[1]
+		if name and ConfigSystem:Load(name) then
+			Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded!', Duration = 3})
+		end
+	end
+})
+
+ConfigAutoloadDropdown = Tabs.Settings:CreateDropdown({
+	Name = "🔄 Autoload Config",
+	Options = ConfigSystem:List(),
+	CurrentOption = {},
+	MultipleOptions = false,
+	Flag = "ConfigAutoloadDropdown",
+	Callback = function(Value)
+		local name = Value[1]
+		if name then
+			ConfigSystem:SetAutoload(name)
+			Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload next time.', Duration = 3})
+		end
+	end
+})
+
+Tabs.Settings:CreateButton({
+	Name = "❌ Reset Autoload",
+	Callback = function()
+		ConfigSystem:ResetAutoload()
+		pcall(function() ConfigAutoloadDropdown:Set({}) end)
+		Rayfield:Notify({Title = "Autoload", Content = "Autoload has been reset.", Duration = 3})
+	end
+})
+
+Tabs.Settings:CreateButton({
+	Name = "🗑️ Delete Config",
+	Callback = function()
+		local name = ConfigNameInput.CurrentValue
+		if not name or name:gsub("%s+", "") == "" then
+			Rayfield:Notify({Title = "Config Manager", Content = "Enter the config name to delete!", Duration = 3})
+			return
+		end
+		ConfigSystem:Delete(name)
+		Rayfield:Notify({Title = "Config Deleted", Content = '"' .. name .. '" deleted.', Duration = 3})
+
+		local list = ConfigSystem:List()
+		ConfigLoadDropdown:Refresh(list)
+		ConfigAutoloadDropdown:Refresh(list)
+	end
+})
+
 -- ========================
 --   CLEANUP & LOAD
 -- ========================
@@ -1404,6 +1577,29 @@ task.delay(1, function()
 	local savedTheme = Options.ThemeSelector and Options.ThemeSelector.CurrentValue
 	if savedTheme and savedTheme[1] and savedTheme[1] ~= "Default" then
 		SetRayfieldTheme(savedTheme[1])
+	end
+end)
+
+-- Autoload config
+task.delay(2, function()
+	local autoload = ConfigSystem:GetAutoload()
+	if autoload then
+		if ConfigSystem:Load(autoload) then
+			Rayfield:Notify({
+				Title = "Config Manager",
+				Content = 'Autoloaded config: "' .. autoload .. '"',
+				Duration = 5
+			})
+			pcall(function()
+				ConfigAutoloadDropdown:Set({autoload})
+			end)
+		else
+			Rayfield:Notify({
+				Title = "Config Manager",
+				Content = 'Failed to autoload "' .. autoload .. '" (file missing or corrupted)',
+				Duration = 5
+			})
+		end
 	end
 end)
 
