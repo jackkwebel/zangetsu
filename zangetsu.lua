@@ -819,7 +819,6 @@ local Options = {}
 local ConfigSystem = {}
 ConfigSystem.Folder = "ZangetsuHub/Configs"
 ConfigSystem.AutoloadFile = "ZangetsuHub/autoload_config.txt"
-ConfigSystem.PendingAutoload = nil
 
 function ConfigSystem:EnsureFolder()
 	if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
@@ -827,6 +826,8 @@ function ConfigSystem:EnsureFolder()
 end
 
 function ConfigSystem:GetPath(name)
+	-- Normalize: trim whitespace and force forward slashes
+	name = tostring(name):gsub("^%s*(.-)%s*$", "%1"):gsub("[\/]+", "/")
 	return self.Folder .. "/" .. name .. ".json"
 end
 
@@ -846,23 +847,60 @@ end
 
 function ConfigSystem:Save(name)
 	self:EnsureFolder()
+	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
 	local data = {}
 	for flag, option in pairs(Options) do
 		if option and option.CurrentValue ~= nil then
 			data[flag] = option.CurrentValue
 		end
 	end
-	writefile(self:GetPath(name), HttpService:JSONEncode(data))
+	local path = self:GetPath(name)
+	local ok, err = pcall(function()
+		writefile(path, HttpService:JSONEncode(data))
+	end)
+	if not ok then
+		warn("[ConfigSystem] Save failed for '" .. name .. "': " .. tostring(err))
+	end
+	return ok
 end
 
 function ConfigSystem:Load(name, silent)
+	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
 	local path = self:GetPath(name)
-	if not isfile(path) then return false, "File not found" end
-	local ok, data = pcall(function()
-		return HttpService:JSONDecode(readfile(path))
+
+	-- Debug: print exactly what we're trying to read
+	if not silent then
+		print("[ConfigSystem] Attempting to load: " .. path)
+	end
+
+	-- Try to read directly instead of checking isfile first (some executors are buggy with isfile)
+	local readOk, content = pcall(function()
+		return readfile(path)
 	end)
-	if not ok then return false, "JSON decode error: " .. tostring(data) end
-	if type(data) ~= "table" then return false, "Corrupted data" end
+
+	if not readOk then
+		-- Debug: list what files actually exist
+		local exists = ""
+		if isfolder(self.Folder) then
+			local ok, files = pcall(listfiles, self.Folder)
+			if ok and type(files) == "table" then
+				for _, f in ipairs(files) do
+					exists = exists .. f .. "; "
+				end
+			end
+		end
+		return false, "Cannot read file '" .. path .. "'. Existing files: " .. exists
+	end
+
+	local decodeOk, data = pcall(function()
+		return HttpService:JSONDecode(content)
+	end)
+	if not decodeOk then
+		return false, "JSON decode failed: " .. tostring(data)
+	end
+	if type(data) ~= "table" then
+		return false, "Decoded data is not a table"
+	end
 
 	local loadedCount = 0
 	local failCount = 0
@@ -881,35 +919,48 @@ function ConfigSystem:Load(name, silent)
 			end
 		else
 			failCount = failCount + 1
-			table.insert(failLog, flag .. ": option missing or no :Set()")
+			table.insert(failLog, flag .. ": missing or no :Set()")
 		end
 	end
 	if not silent then
 		return true, loadedCount, failCount, failLog
 	end
-	return true
+	return true, loadedCount
 end
 
 function ConfigSystem:Delete(name)
+	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
 	local path = self:GetPath(name)
-	if isfile(path) then delfile(path) end
+	pcall(function() delfile(path) end)
 end
 
 function ConfigSystem:SetAutoload(name)
+	name = tostring(name):gsub("^%s*(.-)%s*$", "%1")
 	if not isfolder("ZangetsuHub") then makefolder("ZangetsuHub") end
-	writefile(self.AutoloadFile, name)
+	local ok, err = pcall(function()
+		writefile(self.AutoloadFile, name)
+	end)
+	if not ok then
+		warn("[ConfigSystem] SetAutoload failed: " .. tostring(err))
+	end
+	return ok
 end
 
 function ConfigSystem:GetAutoload()
-	if isfile(self.AutoloadFile) then
-		local name = readfile(self.AutoloadFile)
+	local ok, content = pcall(function()
+		return readfile(self.AutoloadFile)
+	end)
+	if ok and type(content) == "string" then
+		local name = content:gsub("^%s*(.-)%s*$", "%1")
 		return name ~= "" and name or nil
 	end
 	return nil
 end
 
 function ConfigSystem:ResetAutoload()
-	if isfile(self.AutoloadFile) then delfile(self.AutoloadFile) end
+	pcall(function()
+		if isfile(self.AutoloadFile) then delfile(self.AutoloadFile) end
+	end)
 end
 
 -- Config UI elements (declared here, created after all Options are defined)
@@ -1541,7 +1592,10 @@ Tabs.Settings:CreateButton({
 				return
 			end
 		end
-		if not isfile(ConfigSystem:GetPath(name)) then
+		-- Check if file exists by trying to read it
+		local path = ConfigSystem:GetPath(name)
+		local exists = pcall(function() return readfile(path) end)
+		if not exists then
 			Rayfield:Notify({Title = "Config Manager", Content = '"' .. name .. '" does not exist. Use Save Config instead.', Duration = 3})
 			return
 		end
@@ -1567,7 +1621,7 @@ ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
 			if ok then
 				Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings, ' .. tostring(failed) .. ' skipped)', Duration = 3})
 			else
-				Rayfield:Notify({Title = "Config Error", Content = "Failed to load '" .. name .. "': " .. tostring(loaded), Duration = 4})
+				Rayfield:Notify({Title = "Config Error", Content = tostring(loaded), Duration = 6})
 			end
 		end
 	end
@@ -1626,34 +1680,36 @@ task.delay(1, function()
 	end
 end)
 
--- ROBUST AUTOLOAD: polls until Options are ready, then loads
-local function AttemptAutoload()
+-- SUPER ROBUST AUTOLOAD
+task.spawn(function()
+	-- Wait for Rayfield to fully build all Options
+	local ready = false
+	for i = 1, 60 do
+		local count = 0
+		for _ in pairs(Options) do count = count + 1 end
+		if count >= 10 then
+			ready = true
+			break
+		end
+		task.wait(0.5)
+	end
+	if not ready then
+		warn("[ZangetsuHub] Autoload timeout: Options not ready after 30s")
+		return
+	end
+
 	local autoload = ConfigSystem:GetAutoload()
-	if not autoload then return end
-
-	-- Check if Options table is actually populated (Rayfield creates them async)
-	local optionCount = 0
-	for _ in pairs(Options) do optionCount = optionCount + 1 end
-	if optionCount < 10 then
-		-- Options not ready yet, retry in 1 second
-		return false
+	if not autoload then
+		print("[ZangetsuHub] No autoload config set.")
+		return
 	end
 
-	-- Check if the config file exists
-	if not isfile(ConfigSystem:GetPath(autoload)) then
-		Rayfield:Notify({
-			Title = "Autoload Failed",
-			Content = 'Config "' .. autoload .. '" not found. Resetting autoload.',
-			Duration = 5
-		})
-		ConfigSystem:ResetAutoload()
-		return true
-	end
+	print("[ZangetsuHub] Autoload target: '" .. autoload .. "'")
 
-	-- Attempt to load
-	local ok, loaded, failed, log = ConfigSystem:Load(autoload, true)
+	-- Try to load with full error details
+	local ok, loaded, failed, log = ConfigSystem:Load(autoload)
 	if ok then
-		-- Force refresh all UI elements to match loaded values
+		-- Force UI refresh by re-setting every loaded value
 		for flag, option in pairs(Options) do
 			if option and option.CurrentValue ~= nil and option.Set then
 				pcall(function()
@@ -1663,36 +1719,27 @@ local function AttemptAutoload()
 		end
 
 		Rayfield:Notify({
-			Title = "Config Autoloaded",
-			Content = '"' .. autoload .. '" loaded successfully! (' .. tostring(loaded) .. ' settings)',
+			Title = "✅ Config Autoloaded",
+			Content = '"' .. autoload .. '" loaded! (' .. tostring(loaded) .. ' settings applied)',
 			Duration = 5
 		})
 
-		-- Update dropdowns to show the loaded config
 		pcall(function()
 			ConfigLoadDropdown:Set({autoload})
 			ConfigAutoloadDropdown:Set({autoload})
 		end)
 	else
-		Rayfield:Notify({
-			Title = "Autoload Failed",
-			Content = 'Could not load "' .. autoload .. '": ' .. tostring(loaded),
-			Duration = 5
-		})
-	end
-	return true
-end
-
--- Start polling for autoload
-task.spawn(function()
-	local maxWait = 30  -- max 30 seconds of polling
-	local elapsed = 0
-	while elapsed < maxWait do
-		if AttemptAutoload() then
-			break
+		-- Show EXACT error with path info
+		local errMsg = tostring(loaded)
+		if #errMsg > 100 then
+			errMsg = errMsg:sub(1, 97) .. "..."
 		end
-		task.wait(1)
-		elapsed = elapsed + 1
+		Rayfield:Notify({
+			Title = "❌ Autoload Failed",
+			Content = errMsg,
+			Duration = 8
+		})
+		warn("[ZangetsuHub] Autoload error: " .. tostring(loaded))
 	end
 end)
 
