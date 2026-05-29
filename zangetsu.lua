@@ -988,6 +988,8 @@ local ConfigNameInput, ConfigLoadDropdown, ConfigAutoloadDropdown
 --   AUTO START SYSTEM
 -- ========================
 
+local autoStartActive = false
+
 local function TriggerGameStart()
 	local success, err = pcall(function()
 		-- Get selected values
@@ -1057,31 +1059,25 @@ local function TriggerGameStart()
 	end
 end
 
-local autoStartConnection = nil
-
 local function StartAutoStart()
-	if autoStartConnection then autoStartConnection:Disconnect() end
+	if autoStartActive then return end
+	autoStartActive = true
 
 	local delaySeconds = Options.StartAfterXSeconds.CurrentValue or 0
 
-	autoStartConnection = task.spawn(function()
+	task.spawn(function()
 		if delaySeconds > 0 then
 			task.wait(delaySeconds)
 		end
 
-		while Options.AutoStartToggle.CurrentValue do
+		if autoStartActive and Options.AutoStartToggle.CurrentValue then
 			TriggerGameStart()
-			task.wait(1)
-			break
 		end
 	end)
 end
 
 local function StopAutoStart()
-	if autoStartConnection then
-		autoStartConnection:Disconnect()
-		autoStartConnection = nil
-	end
+	autoStartActive = false
 end
 
 -- ========================
