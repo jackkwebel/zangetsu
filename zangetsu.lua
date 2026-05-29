@@ -990,31 +990,68 @@ local ConfigNameInput, ConfigLoadDropdown, ConfigAutoloadDropdown
 
 local autoStartActive = false
 
+-- Safe helper: Rayfield may return a table {value} or just the string
+local function GetDropdownValue(option)
+	if not option then return nil end
+	local val = option.CurrentValue
+	if type(val) == "table" then
+		return val[1]
+	elseif type(val) == "string" then
+		return val
+	end
+	return nil
+end
+
+local function GetMultiDropdownValue(option)
+	if not option then return {} end
+	local val = option.CurrentValue
+	if type(val) == "table" then
+		return val
+	end
+	return {}
+end
+
 local function TriggerGameStart()
 	local success, err = pcall(function()
-		-- Get selected values
-		local gameType = Options.AutoStartType.CurrentValue[1] or "Missions"
-		local map = Options.AutoStartMap.CurrentValue[1]
-		local objective = Options.AutoStartObjective.CurrentValue[1]
-		local difficulty = Options.AutoStartDifficulty.CurrentValue[1]
-		local modifiers = Options.AutoStartModifiers.CurrentValue or {}
-		
-		if not map or not objective or not difficulty then
+		-- Read the CURRENTLY SELECTED values from your UI
+		local gameType    = GetDropdownValue(Options.AutoStartType) or "Missions"
+		local map         = GetDropdownValue(Options.AutoStartMap)
+		local objective   = GetDropdownValue(Options.AutoStartObjective)
+		local difficulty  = GetDropdownValue(Options.AutoStartDifficulty)
+		local modifiers   = GetMultiDropdownValue(Options.AutoStartModifiers)
+
+		-- Validate that the required ones are actually selected
+		if not map or map == "" then
 			Rayfield:Notify({
 				Title = "Auto Start",
-				Content = "Missing required settings! Select Type, Map, Objective, and Difficulty.",
+				Content = "No map selected! Please choose a map first.",
+				Duration = 4
+			})
+			return
+		end
+		if not objective or objective == "" then
+			Rayfield:Notify({
+				Title = "Auto Start",
+				Content = "No objective selected! Please choose an objective first.",
+				Duration = 4
+			})
+			return
+		end
+		if not difficulty or difficulty == "" then
+			Rayfield:Notify({
+				Title = "Auto Start",
+				Content = "No difficulty selected! Please choose a difficulty first.",
 				Duration = 4
 			})
 			return
 		end
 
-		-- Find and trigger the remote that starts the game
+		-- Find the start remote
 		local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 		if not remotes then
 			error("Remotes folder not found")
 		end
 
-		-- Look for game start related remotes
 		local startRemote = remotes:FindFirstChild("StartGame")
 			or remotes:FindFirstChild("Start")
 			or remotes:FindFirstChild("PlayGame")
@@ -1025,7 +1062,7 @@ local function TriggerGameStart()
 			error("Start remote not found")
 		end
 
-		-- Build the game configuration
+		-- Build config from your UI selections
 		local gameConfig = {
 			Type = gameType,
 			Map = map,
@@ -1034,7 +1071,7 @@ local function TriggerGameStart()
 			Modifiers = modifiers
 		}
 
-		-- Fire the remote with the configuration
+		-- Fire it
 		if startRemote:IsA("RemoteEvent") then
 			startRemote:FireServer(gameConfig)
 		elseif startRemote:IsA("RemoteFunction") then
@@ -1045,7 +1082,7 @@ local function TriggerGameStart()
 
 		Rayfield:Notify({
 			Title = "Auto Start",
-			Content = "Starting " .. gameType .. " - " .. map .. " (" .. difficulty .. ")",
+			Content = "Starting " .. tostring(gameType) .. " - " .. tostring(map) .. " (" .. tostring(difficulty) .. ")",
 			Duration = 3
 		})
 	end)
@@ -1056,6 +1093,7 @@ local function TriggerGameStart()
 			Content = "Failed to start game: " .. tostring(err),
 			Duration = 4
 		})
+		warn("[ZangetsuHub] Auto Start Error:", err)
 	end
 end
 
@@ -1063,7 +1101,7 @@ local function StartAutoStart()
 	if autoStartActive then return end
 	autoStartActive = true
 
-	local delaySeconds = Options.StartAfterXSeconds.CurrentValue or 0
+	local delaySeconds = Options.StartAfterXSeconds and Options.StartAfterXSeconds.CurrentValue or 0
 
 	task.spawn(function()
 		if delaySeconds > 0 then
@@ -1164,9 +1202,10 @@ Options.AutoStartToggle = Tabs.Main:CreateToggle({
 	Callback = function(Value)
 		if Value then
 			StartAutoStart()
+			local delay = Options.StartAfterXSeconds and Options.StartAfterXSeconds.CurrentValue or 0
 			Rayfield:Notify({
 				Title = "Auto Start",
-				Content = "Enabled! Will start in " .. Options.StartAfterXSeconds.CurrentValue .. " seconds.",
+				Content = "Enabled! Will start in " .. tostring(delay) .. " seconds.",
 				Duration = 3
 			})
 		else
