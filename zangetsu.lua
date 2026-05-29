@@ -17,11 +17,7 @@ local Window = Rayfield:CreateWindow({
 		FolderName = "ZangetsuHub",
 		FileName = "AOT-R"
 	},
-	Discord = {
-		Enabled = false,
-		Invite = "",
-		RememberJoins = true
-	},
+	Discord = { Enabled = false, Invite = "", RememberJoins = true },
 	KeySystem = false,
 	KeySettings = {}
 })
@@ -32,332 +28,24 @@ local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
 local HttpService = game:GetService("HttpService")
-
 local LocalPlayer = Players.LocalPlayer
 
--- ========================
---   THEME SYSTEM
--- ========================
-
-local Themes = {
-	Default = {
-		Background = Color3.fromRGB(25, 25, 25),
-		Topbar = Color3.fromRGB(34, 34, 34),
-		Shadow = Color3.fromRGB(20, 20, 20),
-		NotificationBackground = Color3.fromRGB(25, 25, 25),
-		NotificationActionsBackground = Color3.fromRGB(230, 230, 230),
-		TabBackground = Color3.fromRGB(80, 80, 80),
-		TabStroke = Color3.fromRGB(85, 85, 85),
-		TabBackgroundSelected = Color3.fromRGB(210, 210, 210),
-		TabTextColor = Color3.fromRGB(240, 240, 240),
-		SelectedTabTextColor = Color3.fromRGB(50, 50, 50),
-		ElementBackground = Color3.fromRGB(35, 35, 35),
-		ElementBackgroundHover = Color3.fromRGB(40, 40, 40),
-		SecondaryElementBackground = Color3.fromRGB(25, 25, 25),
-		ElementStroke = Color3.fromRGB(50, 50, 50),
-		SecondaryElementStroke = Color3.fromRGB(40, 40, 40),
-		SliderBackground = Color3.fromRGB(50, 138, 220),
-		SliderProgress = Color3.fromRGB(50, 138, 220),
-		SliderStroke = Color3.fromRGB(58, 163, 255),
-		ToggleBackground = Color3.fromRGB(30, 30, 30),
-		ToggleEnabled = Color3.fromRGB(0, 146, 214),
-		ToggleDisabled = Color3.fromRGB(100, 100, 100),
-		ToggleEnabledStroke = Color3.fromRGB(0, 170, 255),
-		ToggleDisabledStroke = Color3.fromRGB(125, 125, 125),
-		ToggleEnabledOuterStroke = Color3.fromRGB(100, 100, 100),
-		ToggleDisabledOuterStroke = Color3.fromRGB(65, 65, 65),
-		DropdownSelected = Color3.fromRGB(40, 40, 40),
-		DropdownUnselected = Color3.fromRGB(30, 30, 30),
-		InputBackground = Color3.fromRGB(30, 30, 30),
-		InputStroke = Color3.fromRGB(65, 65, 65),
-		PlaceholderColor = Color3.fromRGB(178, 178, 178)
-	},
-	DarkRed = {
-		Background = Color3.fromRGB(20, 20, 20),
-		Topbar = Color3.fromRGB(30, 20, 20),
-		Shadow = Color3.fromRGB(15, 10, 10),
-		NotificationBackground = Color3.fromRGB(25, 20, 20),
-		NotificationActionsBackground = Color3.fromRGB(230, 200, 200),
-		TabBackground = Color3.fromRGB(80, 50, 50),
-		TabStroke = Color3.fromRGB(100, 60, 60),
-		TabBackgroundSelected = Color3.fromRGB(220, 100, 100),
-		TabTextColor = Color3.fromRGB(240, 220, 220),
-		SelectedTabTextColor = Color3.fromRGB(50, 20, 20),
-		ElementBackground = Color3.fromRGB(35, 25, 25),
-		ElementBackgroundHover = Color3.fromRGB(45, 30, 30),
-		SecondaryElementBackground = Color3.fromRGB(25, 18, 18),
-		ElementStroke = Color3.fromRGB(70, 45, 45),
-		SecondaryElementStroke = Color3.fromRGB(55, 35, 35),
-		SliderBackground = Color3.fromRGB(200, 50, 50),
-		SliderProgress = Color3.fromRGB(220, 60, 60),
-		SliderStroke = Color3.fromRGB(255, 80, 80),
-		ToggleBackground = Color3.fromRGB(30, 20, 20),
-		ToggleEnabled = Color3.fromRGB(200, 50, 50),
-		ToggleDisabled = Color3.fromRGB(100, 70, 70),
-		ToggleEnabledStroke = Color3.fromRGB(255, 70, 70),
-		ToggleDisabledStroke = Color3.fromRGB(130, 90, 90),
-		ToggleEnabledOuterStroke = Color3.fromRGB(100, 70, 70),
-		ToggleDisabledOuterStroke = Color3.fromRGB(65, 45, 45),
-		DropdownSelected = Color3.fromRGB(45, 30, 30),
-		DropdownUnselected = Color3.fromRGB(35, 22, 22),
-		InputBackground = Color3.fromRGB(30, 20, 20),
-		InputStroke = Color3.fromRGB(80, 50, 50),
-		PlaceholderColor = Color3.fromRGB(200, 160, 160)
-	},
-	Ocean = {
-		Background = Color3.fromRGB(15, 25, 35),
-		Topbar = Color3.fromRGB(20, 35, 50),
-		Shadow = Color3.fromRGB(10, 18, 28),
-		NotificationBackground = Color3.fromRGB(18, 30, 45),
-		NotificationActionsBackground = Color3.fromRGB(200, 230, 255),
-		TabBackground = Color3.fromRGB(40, 70, 100),
-		TabStroke = Color3.fromRGB(50, 90, 130),
-		TabBackgroundSelected = Color3.fromRGB(80, 180, 255),
-		TabTextColor = Color3.fromRGB(220, 240, 255),
-		SelectedTabTextColor = Color3.fromRGB(10, 30, 50),
-		ElementBackground = Color3.fromRGB(22, 38, 55),
-		ElementBackgroundHover = Color3.fromRGB(28, 50, 75),
-		SecondaryElementBackground = Color3.fromRGB(15, 28, 42),
-		ElementStroke = Color3.fromRGB(35, 65, 95),
-		SecondaryElementStroke = Color3.fromRGB(28, 50, 75),
-		SliderBackground = Color3.fromRGB(0, 170, 255),
-		SliderProgress = Color3.fromRGB(50, 200, 255),
-		SliderStroke = Color3.fromRGB(100, 230, 255),
-		ToggleBackground = Color3.fromRGB(20, 35, 50),
-		ToggleEnabled = Color3.fromRGB(0, 170, 255),
-		ToggleDisabled = Color3.fromRGB(60, 90, 120),
-		ToggleEnabledStroke = Color3.fromRGB(50, 200, 255),
-		ToggleDisabledStroke = Color3.fromRGB(80, 120, 160),
-		ToggleEnabledOuterStroke = Color3.fromRGB(60, 100, 140),
-		ToggleDisabledOuterStroke = Color3.fromRGB(35, 55, 75),
-		DropdownSelected = Color3.fromRGB(28, 50, 75),
-		DropdownUnselected = Color3.fromRGB(20, 35, 55),
-		InputBackground = Color3.fromRGB(20, 35, 50),
-		InputStroke = Color3.fromRGB(50, 85, 120),
-		PlaceholderColor = Color3.fromRGB(160, 200, 230)
-	},
-	Midnight = {
-		Background = Color3.fromRGB(10, 10, 25),
-		Topbar = Color3.fromRGB(15, 15, 40),
-		Shadow = Color3.fromRGB(8, 8, 20),
-		NotificationBackground = Color3.fromRGB(12, 12, 30),
-		NotificationActionsBackground = Color3.fromRGB(200, 200, 255),
-		TabBackground = Color3.fromRGB(50, 50, 90),
-		TabStroke = Color3.fromRGB(70, 70, 120),
-		TabBackgroundSelected = Color3.fromRGB(120, 100, 255),
-		TabTextColor = Color3.fromRGB(220, 220, 255),
-		SelectedTabTextColor = Color3.fromRGB(30, 20, 60),
-		ElementBackground = Color3.fromRGB(20, 20, 45),
-		ElementBackgroundHover = Color3.fromRGB(28, 28, 60),
-		SecondaryElementBackground = Color3.fromRGB(12, 12, 30),
-		ElementStroke = Color3.fromRGB(40, 40, 80),
-		SecondaryElementStroke = Color3.fromRGB(30, 30, 65),
-		SliderBackground = Color3.fromRGB(130, 100, 255),
-		SliderProgress = Color3.fromRGB(150, 120, 255),
-		SliderStroke = Color3.fromRGB(180, 160, 255),
-		ToggleBackground = Color3.fromRGB(18, 18, 40),
-		ToggleEnabled = Color3.fromRGB(130, 100, 255),
-		ToggleDisabled = Color3.fromRGB(70, 70, 110),
-		ToggleEnabledStroke = Color3.fromRGB(160, 140, 255),
-		ToggleDisabledStroke = Color3.fromRGB(90, 90, 140),
-		ToggleEnabledOuterStroke = Color3.fromRGB(70, 70, 120),
-		ToggleDisabledOuterStroke = Color3.fromRGB(40, 40, 70),
-		DropdownSelected = Color3.fromRGB(28, 28, 60),
-		DropdownUnselected = Color3.fromRGB(18, 18, 45),
-		InputBackground = Color3.fromRGB(18, 18, 40),
-		InputStroke = Color3.fromRGB(50, 50, 100),
-		PlaceholderColor = Color3.fromRGB(170, 170, 220)
-	},
-	Forest = {
-		Background = Color3.fromRGB(18, 28, 18),
-		Topbar = Color3.fromRGB(25, 40, 25),
-		Shadow = Color3.fromRGB(12, 20, 12),
-		NotificationBackground = Color3.fromRGB(20, 32, 20),
-		NotificationActionsBackground = Color3.fromRGB(200, 255, 200),
-		TabBackground = Color3.fromRGB(50, 80, 50),
-		TabStroke = Color3.fromRGB(65, 105, 65),
-		TabBackgroundSelected = Color3.fromRGB(100, 220, 100),
-		TabTextColor = Color3.fromRGB(220, 255, 220),
-		SelectedTabTextColor = Color3.fromRGB(15, 40, 15),
-		ElementBackground = Color3.fromRGB(25, 40, 25),
-		ElementBackgroundHover = Color3.fromRGB(32, 52, 32),
-		SecondaryElementBackground = Color3.fromRGB(18, 30, 18),
-		ElementStroke = Color3.fromRGB(45, 75, 45),
-		SecondaryElementStroke = Color3.fromRGB(35, 60, 35),
-		SliderBackground = Color3.fromRGB(60, 200, 60),
-		SliderProgress = Color3.fromRGB(80, 230, 80),
-		SliderStroke = Color3.fromRGB(120, 255, 120),
-		ToggleBackground = Color3.fromRGB(22, 38, 22),
-		ToggleEnabled = Color3.fromRGB(60, 200, 60),
-		ToggleDisabled = Color3.fromRGB(70, 100, 70),
-		ToggleEnabledStroke = Color3.fromRGB(90, 240, 90),
-		ToggleDisabledStroke = Color3.fromRGB(90, 130, 90),
-		ToggleEnabledOuterStroke = Color3.fromRGB(70, 110, 70),
-		ToggleDisabledOuterStroke = Color3.fromRGB(40, 65, 40),
-		DropdownSelected = Color3.fromRGB(32, 52, 32),
-		DropdownUnselected = Color3.fromRGB(22, 38, 22),
-		InputBackground = Color3.fromRGB(22, 38, 22),
-		InputStroke = Color3.fromRGB(55, 90, 55),
-		PlaceholderColor = Color3.fromRGB(160, 210, 160)
-	},
-	Sunset = {
-		Background = Color3.fromRGB(30, 20, 18),
-		Topbar = Color3.fromRGB(45, 28, 22),
-		Shadow = Color3.fromRGB(22, 14, 12),
-		NotificationBackground = Color3.fromRGB(35, 22, 18),
-		NotificationActionsBackground = Color3.fromRGB(255, 220, 200),
-		TabBackground = Color3.fromRGB(100, 65, 45),
-		TabStroke = Color3.fromRGB(130, 85, 60),
-		TabBackgroundSelected = Color3.fromRGB(255, 160, 80),
-		TabTextColor = Color3.fromRGB(255, 235, 220),
-		SelectedTabTextColor = Color3.fromRGB(60, 30, 15),
-		ElementBackground = Color3.fromRGB(40, 25, 20),
-		ElementBackgroundHover = Color3.fromRGB(55, 32, 25),
-		SecondaryElementBackground = Color3.fromRGB(30, 18, 14),
-		ElementStroke = Color3.fromRGB(75, 45, 35),
-		SecondaryElementStroke = Color3.fromRGB(60, 35, 28),
-		SliderBackground = Color3.fromRGB(255, 140, 50),
-		SliderProgress = Color3.fromRGB(255, 170, 70),
-		SliderStroke = Color3.fromRGB(255, 200, 100),
-		ToggleBackground = Color3.fromRGB(35, 22, 18),
-		ToggleEnabled = Color3.fromRGB(255, 130, 40),
-		ToggleDisabled = Color3.fromRGB(120, 80, 60),
-		ToggleEnabledStroke = Color3.fromRGB(255, 160, 60),
-		ToggleDisabledStroke = Color3.fromRGB(150, 100, 75),
-		ToggleEnabledOuterStroke = Color3.fromRGB(130, 85, 60),
-		ToggleDisabledOuterStroke = Color3.fromRGB(70, 45, 35),
-		DropdownSelected = Color3.fromRGB(55, 32, 25),
-		DropdownUnselected = Color3.fromRGB(38, 22, 18),
-		InputBackground = Color3.fromRGB(35, 22, 18),
-		InputStroke = Color3.fromRGB(85, 55, 40),
-		PlaceholderColor = Color3.fromRGB(220, 180, 160)
-	},
-	["AOT Green"] = {
-		Background = Color3.fromRGB(12, 18, 12),
-		Topbar = Color3.fromRGB(18, 28, 18),
-		Shadow = Color3.fromRGB(8, 14, 8),
-		NotificationBackground = Color3.fromRGB(15, 24, 15),
-		NotificationActionsBackground = Color3.fromRGB(180, 255, 180),
-		TabBackground = Color3.fromRGB(40, 70, 40),
-		TabStroke = Color3.fromRGB(55, 95, 55),
-		TabBackgroundSelected = Color3.fromRGB(80, 200, 80),
-		TabTextColor = Color3.fromRGB(210, 255, 210),
-		SelectedTabTextColor = Color3.fromRGB(10, 35, 10),
-		ElementBackground = Color3.fromRGB(20, 35, 20),
-		ElementBackgroundHover = Color3.fromRGB(28, 48, 28),
-		SecondaryElementBackground = Color3.fromRGB(14, 24, 14),
-		ElementStroke = Color3.fromRGB(35, 65, 35),
-		SecondaryElementStroke = Color3.fromRGB(28, 50, 28),
-		SliderBackground = Color3.fromRGB(50, 180, 50),
-		SliderProgress = Color3.fromRGB(70, 210, 70),
-		SliderStroke = Color3.fromRGB(100, 240, 100),
-		ToggleBackground = Color3.fromRGB(18, 32, 18),
-		ToggleEnabled = Color3.fromRGB(50, 180, 50),
-		ToggleDisabled = Color3.fromRGB(60, 95, 60),
-		ToggleEnabledStroke = Color3.fromRGB(80, 220, 80),
-		ToggleDisabledStroke = Color3.fromRGB(80, 120, 80),
-		ToggleEnabledOuterStroke = Color3.fromRGB(60, 100, 60),
-		ToggleDisabledOuterStroke = Color3.fromRGB(35, 60, 35),
-		DropdownSelected = Color3.fromRGB(28, 48, 28),
-		DropdownUnselected = Color3.fromRGB(18, 32, 18),
-		InputBackground = Color3.fromRGB(18, 32, 18),
-		InputStroke = Color3.fromRGB(50, 85, 50),
-		PlaceholderColor = Color3.fromRGB(150, 210, 150)
-	}
-}
-
-local function SetRayfieldTheme(themeName)
-	local theme = Themes[themeName]
-	if not theme then return end
-
-	local success = pcall(function()
-		local main = game:GetService("CoreGui"):FindFirstChild("Rayfield")
-		if not main then return end
-
-		-- Main background
-		local bg = main:FindFirstChild("Main") and main.Main:FindFirstChild("Background")
-		if bg then
-			bg.ImageColor3 = theme.Background
-		end
-
-		-- Topbar
-		local topbar = main:FindFirstChild("Main") and main.Main:FindFirstChild("Topbar")
-		if topbar then
-			topbar.BackgroundColor3 = theme.Topbar
-		end
-
-		-- Tabs
-		local tabsList = main:FindFirstChild("Main") and main.Main:FindFirstChild("Elements") and main.Main.Elements:FindFirstChild("TabList")
-		if tabsList then
-			for _, tab in ipairs(tabsList:GetDescendants()) do
-				if tab:IsA("Frame") and tab.Name == "TabButton" then
-					local isSelected = tab:FindFirstChild("TabTitle") and tab.TabTitle.TextColor3.R < 0.5
-					tab.BackgroundColor3 = isSelected and theme.TabBackgroundSelected or theme.TabBackground
-					if tab:FindFirstChild("UIStroke") then
-						tab.UIStroke.Color = theme.TabStroke
-					end
-					if tab:FindFirstChild("TabTitle") then
-						tab.TabTitle.TextColor3 = isSelected and theme.SelectedTabTextColor or theme.TabTextColor
-					end
-				end
-			end
-		end
-
-		-- Elements (toggles, sliders, etc.)
-		local content = main:FindFirstChild("Main") and main.Main:FindFirstChild("Elements") and main.Main.Elements:FindFirstChild("Content")
-		if content then
-			for _, section in ipairs(content:GetDescendants()) do
-				if section:IsA("Frame") then
-					-- Section backgrounds
-					if section.Name == "Section" or section.Name == "SectionContainer" then
-						section.BackgroundColor3 = theme.ElementBackground
-					end
-					-- Element backgrounds
-					if section.Name == "Element" or section.Name == "Toggle" or section.Name == "Slider" or section.Name == "Dropdown" or section.Name == "Input" then
-						section.BackgroundColor3 = theme.ElementBackground
-						if section:FindFirstChild("UIStroke") then
-							section.UIStroke.Color = theme.ElementStroke
-						end
-					end
-					-- Toggles
-					if section.Name == "Toggle" then
-						local toggleBtn = section:FindFirstChild("ToggleFrame") and section.ToggleFrame:FindFirstChild("ToggleCircle")
-						if toggleBtn then
-							local isEnabled = toggleBtn.Position.X.Scale > 0.5
-							toggleBtn.BackgroundColor3 = isEnabled and theme.ToggleEnabled or theme.ToggleDisabled
-						end
-					end
-					-- Sliders
-					if section.Name == "Slider" then
-						local sliderProg = section:FindFirstChild("SliderFrame") and section.SliderFrame:FindFirstChild("SliderProgress")
-						if sliderProg then
-							sliderProg.BackgroundColor3 = theme.SliderProgress
-						end
-					end
-				end
-			end
-		end
-
-		-- Notifications
-		local notifHolder = main:FindFirstChild("Notifications")
-		if notifHolder then
-			for _, notif in ipairs(notifHolder:GetDescendants()) do
-				if notif:IsA("Frame") and notif.Name == "Notification" then
-					notif.BackgroundColor3 = theme.NotificationBackground
-				end
-			end
-		end
-	end)
-
-	if success then
-		Rayfield:Notify({
-			Title = "Theme Changed",
-			Content = "Applied theme: " .. themeName,
-			Duration = 3
-		})
+-- Universal queue_on_teleport wrapper
+local function QueueOnTeleport(code)
+	if type(queue_on_teleport) == "function" then
+		if pcall(queue_on_teleport, code) then return true end
 	end
+	if type(syn) == "table" and type(syn.queue_on_teleport) == "function" then
+		if pcall(syn.queue_on_teleport, code) then return true end
+	end
+	if type(fluxus) == "table" and type(fluxus.queue_on_teleport) == "function" then
+		if pcall(fluxus.queue_on_teleport, code) then return true end
+	end
+	if type(getgenv().queue_on_teleport) == "function" then
+		if pcall(getgenv().queue_on_teleport, code) then return true end
+	end
+	return false
 end
 
 -- ========================
@@ -376,22 +64,16 @@ local function ReturnToLobby()
 				or remotes:FindFirstChild("Lobby")
 				or remotes:FindFirstChild("ToLobby")
 				or remotes:FindFirstChild("TeleportToLobby")
-			
 			if returnRemote and (returnRemote:IsA("RemoteEvent") or returnRemote:IsA("RemoteFunction")) then
-				if returnRemote:IsA("RemoteEvent") then
-					returnRemote:FireServer()
-				else
-					returnRemote:InvokeServer()
-				end
+				if returnRemote:IsA("RemoteEvent") then returnRemote:FireServer()
+				else returnRemote:InvokeServer() end
 				Rayfield:Notify({ Title = "Return to Lobby", Content = "Teleporting to Town Central...", Duration = 3 })
 				return
 			end
 		end
-		
 		Rayfield:Notify({ Title = "Return to Lobby", Content = "Teleporting to Town Central...", Duration = 3 })
 		TeleportService:Teleport(LOBBY_PLACE_ID, LocalPlayer)
 	end)
-	
 	if not success then
 		Rayfield:Notify({ Title = "Error", Content = "Failed to return to lobby: " .. tostring(err), Duration = 4 })
 	end
@@ -407,106 +89,18 @@ local function CheckShadowBan()
 
 	for attrName, attrValue in pairs(LocalPlayer:GetAttributes()) do
 		local lower = attrName:lower()
-		if lower:find("ban") or lower:find("shadow") or lower:find("mute") or lower:find("gift") or lower:find("trade") or lower:find("party") then
-			if attrValue == true or attrValue == "true" or attrValue == 1 or attrValue == "1" then
+		if lower:find("ban") or lower:find("shadow") or lower:find("mute") then
+			if attrValue == true or attrValue == "true" or attrValue == 1 then
 				isBanned = true
 				table.insert(reasons, "Attr: " .. attrName)
 			end
 		end
 	end
 
-	local banValues = { "ShadowBanned", "Banned", "IsBanned", "CanGift", "CanTrade", "CanJoinParty", "CanInvite", "SocialBanned" }
-	for _, valName in ipairs(banValues) do
-		local obj = LocalPlayer:FindFirstChild(valName)
-		if obj then
-			if obj:IsA("BoolValue") and obj.Value == true then
-				isBanned = true
-				table.insert(reasons, "Player." .. valName)
-			elseif obj:IsA("IntValue") and obj.Value ~= 0 then
-				isBanned = true
-				table.insert(reasons, "Player." .. valName)
-			elseif obj:IsA("StringValue") and (obj.Value:lower():find("ban") or obj.Value:lower():find("true")) then
-				isBanned = true
-				table.insert(reasons, "Player." .. valName)
-			end
-		end
-	end
-
-	local function ScanFolder(folder, path)
-		for _, child in ipairs(folder:GetChildren()) do
-			local childPath = path .. "/" .. child.Name
-			
-			if child.Name == LocalPlayer.Name or child.Name == tostring(LocalPlayer.UserId) then
-				for _, valName in ipairs(banValues) do
-					local dataVal = child:FindFirstChild(valName)
-					if dataVal and dataVal:IsA("BoolValue") and dataVal.Value == true then
-						isBanned = true
-						table.insert(reasons, childPath .. "." .. valName)
-					end
-				end
-				
-				for attrName, attrValue in pairs(child:GetAttributes()) do
-					local lower = attrName:lower()
-					if lower:find("ban") or lower:find("shadow") or lower:find("mute") then
-						if attrValue == true or attrValue == "true" or attrValue == 1 then
-							isBanned = true
-							table.insert(reasons, childPath .. " attr:" .. attrName)
-						end
-					end
-				end
-			end
-			
-			local lowerName = child.Name:lower()
-			if lowerName:find("ban") or lowerName:find("shadow") or lowerName:find("moderation") or lowerName:find("punish") then
-				if child:IsA("Folder") or child:IsA("Configuration") then
-					if child:FindFirstChild(LocalPlayer.Name) or child:FindFirstChild(tostring(LocalPlayer.UserId)) then
-						isBanned = true
-						table.insert(reasons, "BanList:" .. child.Name)
-					end
-				end
-			end
-			
-			if (child:IsA("Folder") or child:IsA("Configuration") or child:IsA("Model")) and #path < 50 then
-				ScanFolder(child, childPath)
-			end
-		end
-	end
-	
-	pcall(function()
-		ScanFolder(ReplicatedStorage, "RS")
-	end)
-
-	local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-	if playerGui then
-		for _, gui in ipairs(playerGui:GetDescendants()) do
-			if gui:IsA("TextLabel") or gui:IsA("TextButton") or gui:IsA("TextBox") then
-				local text = gui.Text:lower()
-				if (text:find("shadowban") or text:find("shadow ban") or text:find("banned") or text:find("restricted") or text:find("suspended")) and gui.Visible then
-					isBanned = true
-					table.insert(reasons, "GUI warning")
-					break
-				end
-			end
-		end
-	end
-
 	if isBanned then
-		local reasonStr = table.concat(reasons, ", ")
-		if #reasonStr > 100 then
-			reasonStr = reasonStr:sub(1, 97) .. "..."
-		end
-		
-		Rayfield:Notify({
-			Title = "⚠️ Shadowban Checker",
-			Content = "SHADOW BANNED detected!\nYou cannot gift, join lobbies, or play with friends.\nFlags: " .. reasonStr,
-			Duration = 10,
-		})
+		Rayfield:Notify({ Title = "⚠️ Shadowban Checker", Content = "SHADOW BANNED detected! Flags: " .. table.concat(reasons, ", "), Duration = 10 })
 	else
-		Rayfield:Notify({
-			Title = "✅ Shadowban Checker",
-			Content = "No shadow ban detected.\nGifting, lobbies, and friends should work normally.",
-			Duration = 4,
-		})
+		Rayfield:Notify({ Title = "✅ Shadowban Checker", Content = "No shadow ban detected.", Duration = 4 })
 	end
 end
 
@@ -554,11 +148,7 @@ local function StartFailsafe()
 			if not Options.Failsafe.CurrentValue then break end
 			local timeoutSeconds = (Options.FailsafeTimeout and Options.FailsafeTimeout.CurrentValue or 10) * 60
 			if tick() - lastActivity >= timeoutSeconds then
-				Rayfield:Notify({
-					Title = "Failsafe Triggered",
-					Content = "Idle for " .. tostring(Options.FailsafeTimeout.CurrentValue) .. " min. Returning to lobby...",
-					Duration = 5,
-				})
+				Rayfield:Notify({ Title = "Failsafe Triggered", Content = "Idle for " .. tostring(Options.FailsafeTimeout.CurrentValue) .. " min. Returning to lobby...", Duration = 5 })
 				task.wait(2)
 				ReturnToLobby()
 				break
@@ -576,7 +166,7 @@ LocalPlayer.CharacterAdded:Connect(function(newChar)
 	task.wait(0.5)
 	local hrp = newChar:WaitForChild("HumanoidRootPart", 5)
 	if hrp then lastPosition = hrp.Position end
-	if Options.Failsafe.CurrentValue then ResetIdleTimer() end
+	if Options.Failsafe and Options.Failsafe.CurrentValue then ResetIdleTimer() end
 end)
 
 -- ========================
@@ -589,32 +179,15 @@ mapStorage.Parent = ReplicatedStorage
 
 local savedMapData = {}
 
-local mapKeywords = {
-	"wall", "house", "building", "tree", "rock", "ground", "terrain",
-	"map", "environment", "world", "decor", "detail", "structure",
-	"fence", "roof", "floor", "grass", "road", "path", "bridge",
-	"tower", "city", "village", "gate", "door", "window", "brick",
-	"concrete", "wood", "stone", "mountain", "hill", "water", "river",
-	"sky", "cloud", "fog", "leaf", "bush", "plant", "flower", "trunk",
-	"branch", "log", "stump", "crate", "box", "barrel", "container",
-	"cart", "wagon", "statue", "monument", "pillar", "column", "beam",
-	"support", "scaffold", "debris", "rubble", "ruin", "wreck"
-}
-
 local function IsCharacterOrNPC(obj)
 	for _, player in ipairs(Players:GetPlayers()) do
-		if player.Character and obj:IsDescendantOf(player.Character) then
-			return true
-		end
+		if player.Character and obj:IsDescendantOf(player.Character) then return true end
 	end
 	if obj:IsA("Humanoid") then return true end
 	if obj:IsA("Model") and obj:FindFirstChildOfClass("Humanoid") then return true end
-
 	local current = obj.Parent
-	while current and current ~= Workspace and current ~= game do
-		if current:IsA("Model") and current:FindFirstChildOfClass("Humanoid") then
-			return true
-		end
+	while current and current ~= game.Workspace and current ~= game do
+		if current:IsA("Model") and current:FindFirstChildOfClass("Humanoid") then return true end
 		current = current.Parent
 	end
 	return false
@@ -623,121 +196,37 @@ end
 local function IsInteractive(obj)
 	if obj:FindFirstChildOfClass("ClickDetector") then return true end
 	if obj:FindFirstChildOfClass("ProximityPrompt") then return true end
-	if obj:FindFirstChildOfClass("SurfaceGui") then return true end
-	if obj:FindFirstChildOfClass("BillboardGui") then return true end
-	if obj:FindFirstChildOfClass("Script") then return true end
-	if obj:FindFirstChildOfClass("LocalScript") then return true end
-	if obj:IsA("ClickDetector") or obj:IsA("ProximityPrompt") then return true end
-	if obj:IsA("Tool") or obj:IsA("HopperBin") then return true end
-	if obj:IsA("Script") or obj:IsA("LocalScript") then return true end
-	if obj:IsA("SurfaceGui") or obj:IsA("BillboardGui") then return true end
-	return false
-end
-
-local function ShouldDeleteMapObject(obj)
-	if IsCharacterOrNPC(obj) then return false end
-	if IsInteractive(obj) then return false end
-	if obj:IsA("Camera") then return false end
-	if obj:IsA("Terrain") then return false end
-
-	local name = obj.Name:lower()
-	for _, kw in ipairs(mapKeywords) do
-		if name:find(kw) then
-			return true
-		end
-	end
-
-	if obj:IsA("BasePart") and obj.Anchored and obj.Parent == Workspace then
-		if obj:FindFirstChildOfClass("Script") or obj:FindFirstChildOfClass("LocalScript") then
-			return false
-		end
-		return true
-	end
-
-	if obj:IsA("Model") and obj.Parent == Workspace then
-		return true
-	end
-
+	if obj:IsA("Tool") or obj:IsA("Script") or obj:IsA("LocalScript") then return true end
 	return false
 end
 
 local function DeleteMap()
-	local terrain = Workspace:FindFirstChildOfClass("Terrain")
-	if terrain then
-		pcall(function() terrain:Clear() end)
-	end
-
-	for _, obj in ipairs(Workspace:GetDescendants()) do
+	local terrain = game.Workspace:FindFirstChildOfClass("Terrain")
+	if terrain then pcall(function() terrain:Clear() end) end
+	for _, obj in ipairs(game.Workspace:GetDescendants()) do
 		if obj.Parent == nil then continue end
-		if savedMapData[obj] then continue end
-
-		local ancestorStored = false
-		for storedObj, _ in pairs(savedMapData) do
-			if obj:IsDescendantOf(storedObj) then
-				ancestorStored = true
-				break
-			end
-		end
-		if ancestorStored then continue end
-
-		if ShouldDeleteMapObject(obj) then
-			savedMapData[obj] = obj.Parent
-			pcall(function() obj.Parent = mapStorage end)
-		end
-	end
-
-	for _, obj in ipairs(Workspace:GetDescendants()) do
-		if obj.Parent == nil then continue end
-		if savedMapData[obj] then continue end
-
-		local ancestorStored = false
-		for storedObj, _ in pairs(savedMapData) do
-			if obj:IsDescendantOf(storedObj) then
-				ancestorStored = true
-				break
-			end
-		end
-		if ancestorStored then continue end
-
-		if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam")
-		   or obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles")
-		   or obj:IsA("Decal") or obj:IsA("Texture") then
-			if not IsCharacterOrNPC(obj) and not IsInteractive(obj) then
+		if not IsCharacterOrNPC(obj) and not IsInteractive(obj) and not obj:IsA("Camera") then
+			if (obj:IsA("BasePart") and obj.Anchored) or obj:IsA("Model") then
 				savedMapData[obj] = obj.Parent
 				pcall(function() obj.Parent = mapStorage end)
 			end
 		end
 	end
-
-	Rayfield:Notify({
-		Title = "Delete Map",
-		Content = "Map hidden. Humans, titans & UI kept.",
-		Duration = 3,
-	})
+	Rayfield:Notify({ Title = "Delete Map", Content = "Map hidden. Humans, titans & UI kept.", Duration = 3 })
 end
 
 local function RestoreMap()
-	local restoredCount = 0
+	local count = 0
 	for obj, originalParent in pairs(savedMapData) do
 		if obj and obj.Parent == mapStorage then
-			local success = pcall(function()
-				if originalParent and originalParent.Parent then
-					obj.Parent = originalParent
-				else
-					obj.Parent = Workspace
-				end
+			pcall(function()
+				obj.Parent = (originalParent and originalParent.Parent) and originalParent or game.Workspace
+				count = count + 1
 			end)
-			if success then restoredCount = restoredCount + 1 end
 		end
 	end
-
 	savedMapData = {}
-
-	Rayfield:Notify({
-		Title = "Delete Map",
-		Content = "Map restored (" .. tostring(restoredCount) .. " objects).",
-		Duration = 3,
-	})
+	Rayfield:Notify({ Title = "Delete Map", Content = "Map restored (" .. count .. " objects).", Duration = 3 })
 end
 
 -- ========================
@@ -748,58 +237,29 @@ local renderConnection = nil
 local blackoutPart = nil
 
 local function Disable3DRendering()
-	pcall(function()
-		RunService:Set3dRenderingEnabled(false)
-	end)
-
+	pcall(function() RunService:Set3dRenderingEnabled(false) end)
 	if blackoutPart then blackoutPart:Destroy() end
 	if renderConnection then renderConnection:Disconnect() end
-
 	blackoutPart = Instance.new("Part")
-	blackoutPart.Name = "ZangetsuBlackout"
 	blackoutPart.Size = Vector3.new(500, 500, 1)
 	blackoutPart.Anchored = true
 	blackoutPart.CanCollide = false
-	blackoutPart.CastShadow = false
 	blackoutPart.Transparency = 0
 	blackoutPart.Color = Color3.new(0, 0, 0)
-	blackoutPart.Material = Enum.Material.SmoothPlastic
-	blackoutPart.Parent = Workspace
-
-	pcall(function()
-		blackoutPart.CanQuery = false
-	end)
-
+	blackoutPart.Parent = game.Workspace
 	renderConnection = RunService.RenderStepped:Connect(function()
 		if blackoutPart and blackoutPart.Parent then
-			local cam = workspace.CurrentCamera
-			if cam then
-				blackoutPart.CFrame = cam.CFrame * CFrame.new(0, 0, -10)
-			end
+			local cam = game.Workspace.CurrentCamera
+			if cam then blackoutPart.CFrame = cam.CFrame * CFrame.new(0, 0, -10) end
 		end
 	end)
-
-	Rayfield:Notify({
-		Title = "3D Rendering",
-		Content = "Disabled. Screen blacked out.",
-		Duration = 3,
-	})
+	Rayfield:Notify({ Title = "3D Rendering", Content = "Disabled.", Duration = 3 })
 end
 
 local function Enable3DRendering()
-	pcall(function()
-		RunService:Set3dRenderingEnabled(true)
-	end)
-
-	if renderConnection then
-		renderConnection:Disconnect()
-		renderConnection = nil
-	end
-	if blackoutPart then
-		blackoutPart:Destroy()
-		blackoutPart = nil
-	end
-
+	pcall(function() RunService:Set3dRenderingEnabled(true) end)
+	if renderConnection then renderConnection:Disconnect(); renderConnection = nil end
+	if blackoutPart then blackoutPart:Destroy(); blackoutPart = nil end
 	Rayfield:Notify({ Title = "3D Rendering", Content = "Restored.", Duration = 3 })
 end
 
@@ -808,16 +268,16 @@ end
 -- ========================
 
 local Tabs = {
-	Main     = Window:CreateTab("Main", "user"),
-	Utility  = Window:CreateTab("Utility", "wrench"),
-	Global   = Window:CreateTab("Global", "globe"),
+	Main     = Window:CreateTab("Main",     "user"),
+	Utility  = Window:CreateTab("Utility",  "wrench"),
+	Global   = Window:CreateTab("Global",   "globe"),
 	Settings = Window:CreateTab("Settings", "settings"),
 }
 
 local Options = {}
 
 -- ========================
---   CONFIG MANAGER ENGINE  (BULLETPROOF)
+--   CONFIG MANAGER ENGINE
 -- ========================
 
 local ConfigSystem = {}
@@ -832,29 +292,21 @@ function ConfigSystem:EnsureFolder()
 end
 
 function ConfigSystem:CleanName(name)
-	-- Aggressive trim: spaces, newlines, BOM, null bytes
 	name = tostring(name or "")
-	name = name:gsub("%s+", "")           -- remove ALL whitespace
-	name = name:gsub("%z", "")             -- remove null bytes
-	name = name:gsub("\239\187\191", "")   -- remove UTF-8 BOM
+	name = name:gsub("%s+", "")
+	name = name:gsub("%z", "")
 	return name
 end
 
 function ConfigSystem:FindFileExact(name)
-	-- Returns the EXACT path as reported by listfiles, or nil
 	name = self:CleanName(name)
 	if name == "" then return nil end
-
 	local ok, files = pcall(listfiles, self.Folder)
 	if not ok or type(files) ~= "table" then return nil end
-
 	for _, filepath in ipairs(files) do
 		if type(filepath) == "string" then
-			-- Match basename from either / or \ separated paths
 			local basename = filepath:match("([^/\\]+)%.json$")
-			if basename and basename:lower() == name:lower() then
-				return filepath  -- return exact path from listfiles
-			end
+			if basename and basename:lower() == name:lower() then return filepath end
 		end
 	end
 	return nil
@@ -877,84 +329,41 @@ function ConfigSystem:Save(name)
 	self:EnsureFolder()
 	name = self:CleanName(name)
 	if name == "" then return false, "Empty name" end
-
 	local data = {}
 	for flag, option in pairs(Options) do
-		if option and option.CurrentValue ~= nil then
-			data[flag] = option.CurrentValue
-		end
+		if option and option.CurrentValue ~= nil then data[flag] = option.CurrentValue end
 	end
-
 	local path = self.Folder .. "/" .. name .. ".json"
-	local ok, err = pcall(function()
-		writefile(path, HttpService:JSONEncode(data))
-	end)
-	if not ok then
-		return false, "Write failed: " .. tostring(err)
-	end
+	local ok, err = pcall(function() writefile(path, HttpService:JSONEncode(data)) end)
+	if not ok then return false, "Write failed: " .. tostring(err) end
 	return true
 end
 
 function ConfigSystem:Load(name, silent)
 	name = self:CleanName(name)
 	if name == "" then return false, "Empty name" end
-
-	-- HUNT: find the exact file path via listfiles
 	local exactPath = self:FindFileExact(name)
-	if not exactPath then
-		local allFiles = table.concat(self:List(), ", ")
-		if allFiles == "" then allFiles = "(folder empty or missing)" end
-		return false, "File '" .. name .. ".json' not found in folder. Found: " .. allFiles
-	end
-
-	-- Read using the EXACT path returned by listfiles
-	local readOk, content = pcall(function()
-		return readfile(exactPath)
-	end)
-	if not readOk then
-		return false, "readfile() failed on '" .. exactPath .. "': " .. tostring(content)
-	end
-
-	local decodeOk, data = pcall(function()
-		return HttpService:JSONDecode(content)
-	end)
-	if not decodeOk then
-		return false, "JSON decode failed: " .. tostring(data)
-	end
-	if type(data) ~= "table" then
-		return false, "Decoded data is not a table"
-	end
-
-	local loadedCount = 0
-	local failCount = 0
+	if not exactPath then return false, "File '" .. name .. ".json' not found." end
+	local readOk, content = pcall(function() return readfile(exactPath) end)
+	if not readOk then return false, "readfile() failed: " .. tostring(content) end
+	local decodeOk, data = pcall(function() return HttpService:JSONDecode(content) end)
+	if not decodeOk then return false, "JSON decode failed: " .. tostring(data) end
+	if type(data) ~= "table" then return false, "Decoded data is not a table" end
+	local loadedCount, failCount = 0, 0
 	for flag, value in pairs(data) do
 		local option = Options[flag]
 		if option and option.Set then
-			local setOk = pcall(function()
-				option:Set(value)
-			end)
-			if setOk then
-				loadedCount = loadedCount + 1
-			else
-				failCount = failCount + 1
-			end
-		else
-			failCount = failCount + 1
+			if pcall(function() option:Set(value) end) then loadedCount = loadedCount + 1
+			else failCount = failCount + 1 end
 		end
 	end
-
-	if not silent then
-		return true, loadedCount, failCount
-	end
-	return true, loadedCount
+	return true, loadedCount, failCount
 end
 
 function ConfigSystem:Delete(name)
 	name = self:CleanName(name)
 	local exactPath = self:FindFileExact(name)
-	if exactPath then
-		pcall(function() delfile(exactPath) end)
-	end
+	if exactPath then pcall(function() delfile(exactPath) end) end
 end
 
 function ConfigSystem:SetAutoload(name)
@@ -966,22 +375,15 @@ function ConfigSystem:SetAutoload(name)
 end
 
 function ConfigSystem:GetAutoload()
-	local ok, content = pcall(function()
-		return readfile(self.AutoloadFile)
-	end)
-	if ok and type(content) == "string" then
-		return self:CleanName(content)
-	end
+	local ok, content = pcall(function() return readfile(self.AutoloadFile) end)
+	if ok and type(content) == "string" then return self:CleanName(content) end
 	return nil
 end
 
 function ConfigSystem:ResetAutoload()
-	pcall(function()
-		if isfile(self.AutoloadFile) then delfile(self.AutoloadFile) end
-	end)
+	pcall(function() if isfile(self.AutoloadFile) then delfile(self.AutoloadFile) end end)
 end
 
--- Config UI elements (declared here, created after all Options are defined)
 local ConfigNameInput, ConfigLoadDropdown, ConfigAutoloadDropdown
 
 -- ========================
@@ -990,125 +392,71 @@ local ConfigNameInput, ConfigLoadDropdown, ConfigAutoloadDropdown
 
 local autoStartActive = false
 
--- Safe helper: Rayfield may return a table {value} or just the string
+-- Helper: safely read Rayfield dropdown value
 local function GetDropdownValue(option)
 	if not option then return nil end
-	local val = option.CurrentValue
-	if type(val) == "table" then
-		return val[1]
-	elseif type(val) == "string" then
-		return val
-	end
+	local val = option.CurrentOption
+	if type(val) == "table" then return val[1] end
+	if type(val) == "string" then return val end
 	return nil
 end
 
-local function GetMultiDropdownValue(option)
-	if not option then return {} end
-	local val = option.CurrentValue
-	if type(val) == "table" then
-		return val
-	end
-	return {}
-end
-
 local function TriggerGameStart()
-	local success, err = pcall(function()
-		-- Read the CURRENTLY SELECTED values from your UI
-		local gameType    = GetDropdownValue(Options.AutoStartType) or "Missions"
-		local map         = GetDropdownValue(Options.AutoStartMap)
-		local objective   = GetDropdownValue(Options.AutoStartObjective)
-		local difficulty  = GetDropdownValue(Options.AutoStartDifficulty)
-		local modifiers   = GetMultiDropdownValue(Options.AutoStartModifiers)
+	-- Read all selected values safely using CurrentOption (Rayfield dropdowns)
+	local gameType  = GetDropdownValue(Options.AutoStartType)   or "Missions"
+	local map       = GetDropdownValue(Options.AutoStartMap)
+	local objective = GetDropdownValue(Options.AutoStartObjective)
+	local difficulty= GetDropdownValue(Options.AutoStartDifficulty)
+	local modifiers = (Options.AutoStartModifiers and Options.AutoStartModifiers.CurrentOption) or {}
 
-		-- Validate that the required ones are actually selected
-		if not map or map == "" then
-			Rayfield:Notify({
-				Title = "Auto Start",
-				Content = "No map selected! Please choose a map first.",
-				Duration = 4
-			})
-			return
-		end
-		if not objective or objective == "" then
-			Rayfield:Notify({
-				Title = "Auto Start",
-				Content = "No objective selected! Please choose an objective first.",
-				Duration = 4
-			})
-			return
-		end
-		if not difficulty or difficulty == "" then
-			Rayfield:Notify({
-				Title = "Auto Start",
-				Content = "No difficulty selected! Please choose a difficulty first.",
-				Duration = 4
-			})
-			return
-		end
-
-		-- Find the start remote
-		local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-		if not remotes then
-			error("Remotes folder not found")
-		end
-
-		local startRemote = remotes:FindFirstChild("StartGame")
-			or remotes:FindFirstChild("Start")
-			or remotes:FindFirstChild("PlayGame")
-			or remotes:FindFirstChild("BeginMatch")
-			or remotes:FindFirstChild("SelectGameMode")
-
-		if not startRemote then
-			error("Start remote not found")
-		end
-
-		-- Build config from your UI selections
-		local gameConfig = {
-			Type = gameType,
-			Map = map,
-			Objective = objective,
-			Difficulty = difficulty,
-			Modifiers = modifiers
-		}
-
-		-- Fire it
-		if startRemote:IsA("RemoteEvent") then
-			startRemote:FireServer(gameConfig)
-		elseif startRemote:IsA("RemoteFunction") then
-			startRemote:InvokeServer(gameConfig)
-		else
-			error("Remote is not a valid type")
-		end
-
+	-- Validate all required fields are selected
+	if not map or not objective or not difficulty then
 		Rayfield:Notify({
 			Title = "Auto Start",
-			Content = "Starting " .. tostring(gameType) .. " - " .. tostring(map) .. " (" .. tostring(difficulty) .. ")",
-			Duration = 3
+			Content = "Missing settings! Make sure Map, Objective and Difficulty are selected.",
+			Duration = 4,
+		})
+		return
+	end
+
+	local modStr = #modifiers > 0 and table.concat(modifiers, ", ") or "None"
+
+	Rayfield:Notify({
+		Title = "Auto Start",
+		Content = gameType .. " | " .. map .. " | " .. objective .. " | " .. difficulty .. "\nMods: " .. modStr,
+		Duration = 5,
+	})
+
+	-- Fire via POST remote (AOT:R's generic remote system)
+	-- ACTION NAME needs to be confirmed via Remote Spy — update below once found
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local remotesFolder = assets and assets:FindFirstChild("Remotes")
+	local POST = remotesFolder and remotesFolder:FindFirstChild("POST")
+
+	if not POST then
+		Rayfield:Notify({ Title = "Auto Start", Content = "POST remote not found!", Duration = 3 })
+		return
+	end
+
+	-- TODO: Replace "StartGame" with the actual action name found via Remote Spy
+	pcall(function()
+		POST:FireServer("StartGame", {
+			Type      = gameType,
+			Map       = map,
+			Objective = objective,
+			Difficulty= difficulty,
+			Modifiers = modifiers,
 		})
 	end)
-
-	if not success then
-		Rayfield:Notify({
-			Title = "Auto Start Error",
-			Content = "Failed to start game: " .. tostring(err),
-			Duration = 4
-		})
-		warn("[ZangetsuHub] Auto Start Error:", err)
-	end
 end
 
 local function StartAutoStart()
 	if autoStartActive then return end
 	autoStartActive = true
-
 	local delaySeconds = Options.StartAfterXSeconds and Options.StartAfterXSeconds.CurrentValue or 0
-
 	task.spawn(function()
-		if delaySeconds > 0 then
-			task.wait(delaySeconds)
-		end
-
-		if autoStartActive and Options.AutoStartToggle.CurrentValue then
+		if delaySeconds > 0 then task.wait(delaySeconds) end
+		if autoStartActive and Options.AutoStartToggle and Options.AutoStartToggle.CurrentValue then
 			TriggerGameStart()
 		end
 	end)
@@ -1131,133 +479,6 @@ local MapObjectives = {
 	["Chapel"]      = { "Skirmish" },
 }
 
-Tabs.Main:CreateSection("Misc")
-
-Tabs.Main:CreateButton({
-	Name = "Return to Lobby",
-	Callback = function() ReturnToLobby() end
-})
-
-Tabs.Main:CreateButton({
-	Name = "Shadowban Checker",
-	Callback = function() CheckShadowBan() end
-})
-
-Tabs.Main:CreateButton({
-	Name = "Join Discord",
-	Callback = function() end
-})
-
-Tabs.Main:CreateSection("Automation")
-
-Options.AutoFarm = Tabs.Main:CreateToggle({
-	Name = "Auto Farm",
-	CurrentValue = false,
-	Flag = "AutoFarm",
-	Callback = function() end
-})
-
-Options.AutoFarmRaids = Tabs.Main:CreateToggle({
-	Name = "Auto Farm Raids",
-	CurrentValue = false,
-	Flag = "AutoFarmRaids",
-	Callback = function() end
-})
-
-Options.AutoRetry = Tabs.Main:CreateToggle({
-	Name = "Auto Retry",
-	CurrentValue = false,
-	Flag = "AutoRetry",
-	Callback = function() end
-})
-
-Options.SoloOnly = Tabs.Main:CreateToggle({
-	Name = "Solo Only",
-	CurrentValue = false,
-	Flag = "SoloOnly",
-	Callback = function() end
-})
-
-Options.AutoReturnToLobby = Tabs.Main:CreateToggle({
-	Name = "Auto Return to Lobby",
-	CurrentValue = false,
-	Flag = "AutoReturnToLobby",
-	Callback = function() end
-})
-
-Options.ReturnAfterXGames = Tabs.Main:CreateSlider({
-	Name = "Return to lobby after x games",
-	Range = {1, 250},
-	Increment = 1,
-	Suffix = "",
-	CurrentValue = 10,
-	Flag = "ReturnAfterXGames",
-	Callback = function() end
-})
-
-Options.AutoStartToggle = Tabs.Main:CreateToggle({
-	Name = "Auto Start",
-	CurrentValue = false,
-	Flag = "AutoStartToggle",
-	Callback = function(Value)
-		if Value then
-			StartAutoStart()
-			local delay = Options.StartAfterXSeconds and Options.StartAfterXSeconds.CurrentValue or 0
-			Rayfield:Notify({
-				Title = "Auto Start",
-				Content = "Enabled! Will start in " .. tostring(delay) .. " seconds.",
-				Duration = 3
-			})
-		else
-			StopAutoStart()
-			Rayfield:Notify({Title = "Auto Start", Content = "Disabled.", Duration = 3})
-		end
-	end
-})
-
-Options.StartAfterXSeconds = Tabs.Main:CreateSlider({
-	Name = "Start after x seconds",
-	Range = {0, 500},
-	Increment = 1,
-	Suffix = "",
-	CurrentValue = 0,
-	Flag = "StartAfterXSeconds",
-	Callback = function() end
-})
-
-Tabs.Main:CreateSection("Movement")
-
-Options.MovementMode = Tabs.Main:CreateDropdown({
-	Name = "Movement Mode",
-	Options = {"Teleport", "Hover"},
-	CurrentOption = {"Teleport"},
-	MultipleOptions = false,
-	Flag = "MovementMode",
-	Callback = function() end
-})
-
-Options.HoverSpeed = Tabs.Main:CreateSlider({
-	Name = "Hover Speed",
-	Range = {0, 500},
-	Increment = 1,
-	Suffix = "",
-	CurrentValue = 400,
-	Flag = "HoverSpeed",
-	Callback = function() end
-})
-
-Options.FloatHeight = Tabs.Main:CreateSlider({
-	Name = "Float Height",
-	Range = {0, 300},
-	Increment = 1,
-	Suffix = "",
-	CurrentValue = 300,
-	Flag = "FloatHeight",
-	Callback = function() end
-})
-
-Tabs.Main:CreateSection("Auto Start")
-
 local MissionMaps       = { "Shiganshina", "Trost", "Outskirts", "Forest", "Stohess", "Chapel" }
 local RaidMaps          = { "Trost", "Shiganshina", "Stohess", "Colossal" }
 local DifficultyOptions = { "Easy", "Normal", "Hard", "Severe", "Aberrant", "Hardest" }
@@ -1265,38 +486,76 @@ local ModifierOptions   = { "No Skills", "No Talents", "Nightmare", "Oddball", "
 local RAID_TITAN_TEXT   = "Trost: Attack Titan\nShiganshina: Armored Titan\nStohess: Female Titan\nColossal: Colossal Titan"
 local RaidTitanLabel    = nil
 
-Options.AutoStartType = Tabs.Main:CreateDropdown({
-	Name = "Type",
-	Options = {"Missions", "Raids"},
-	CurrentOption = {"Missions"},
-	MultipleOptions = false,
-	Flag = "AutoStartType",
+Tabs.Main:CreateSection("Misc")
+
+Tabs.Main:CreateButton({ Name = "Return to Lobby",    Callback = function() ReturnToLobby() end })
+Tabs.Main:CreateButton({ Name = "Shadowban Checker",  Callback = function() CheckShadowBan() end })
+Tabs.Main:CreateButton({ Name = "Join Discord",        Callback = function() end })
+
+Tabs.Main:CreateSection("Automation")
+
+Options.AutoFarm          = Tabs.Main:CreateToggle({ Name = "Auto Farm",            CurrentValue = false, Flag = "AutoFarm",          Callback = function() end })
+Options.AutoFarmRaids     = Tabs.Main:CreateToggle({ Name = "Auto Farm Raids",      CurrentValue = false, Flag = "AutoFarmRaids",     Callback = function() end })
+Options.AutoRetry         = Tabs.Main:CreateToggle({ Name = "Auto Retry",           CurrentValue = false, Flag = "AutoRetry",         Callback = function() end })
+Options.SoloOnly          = Tabs.Main:CreateToggle({ Name = "Solo Only",            CurrentValue = false, Flag = "SoloOnly",          Callback = function() end })
+Options.AutoReturnToLobby = Tabs.Main:CreateToggle({ Name = "Auto Return to Lobby", CurrentValue = false, Flag = "AutoReturnToLobby", Callback = function() end })
+
+Options.ReturnAfterXGames = Tabs.Main:CreateSlider({
+	Name = "Return to lobby after x games", Range = {1, 250}, Increment = 1, CurrentValue = 10,
+	Flag = "ReturnAfterXGames", Callback = function() end
+})
+
+Options.AutoStartToggle = Tabs.Main:CreateToggle({
+	Name = "Auto Start", CurrentValue = false, Flag = "AutoStartToggle",
 	Callback = function(Value)
-		local selected = Value[1]
+		if Value then
+			StartAutoStart()
+			local delay = Options.StartAfterXSeconds and Options.StartAfterXSeconds.CurrentValue or 0
+			Rayfield:Notify({ Title = "Auto Start", Content = "Enabled! Starting in " .. delay .. " seconds.", Duration = 3 })
+		else
+			StopAutoStart()
+			Rayfield:Notify({ Title = "Auto Start", Content = "Disabled.", Duration = 3 })
+		end
+	end
+})
+
+Options.StartAfterXSeconds = Tabs.Main:CreateSlider({
+	Name = "Start after x seconds", Range = {0, 500}, Increment = 1, CurrentValue = 0,
+	Flag = "StartAfterXSeconds", Callback = function() end
+})
+
+Tabs.Main:CreateSection("Movement")
+
+Options.MovementMode = Tabs.Main:CreateDropdown({ Name = "Movement Mode", Options = {"Teleport", "Hover"}, CurrentOption = {"Teleport"}, MultipleOptions = false, Flag = "MovementMode", Callback = function() end })
+Options.HoverSpeed   = Tabs.Main:CreateSlider({ Name = "Hover Speed",  Range = {0, 500}, Increment = 1, CurrentValue = 400, Flag = "HoverSpeed",  Callback = function() end })
+Options.FloatHeight  = Tabs.Main:CreateSlider({ Name = "Float Height", Range = {0, 300}, Increment = 1, CurrentValue = 300, Flag = "FloatHeight", Callback = function() end })
+
+Tabs.Main:CreateSection("Auto Start")
+
+Options.AutoStartType = Tabs.Main:CreateDropdown({
+	Name = "Type", Options = {"Missions", "Raids"}, CurrentOption = {"Missions"}, MultipleOptions = false, Flag = "AutoStartType",
+	Callback = function(Value)
+		local selected = type(Value) == "table" and Value[1] or Value
 		if selected == "Missions" then
 			Options.AutoStartMap:Refresh(MissionMaps)
 			Options.AutoStartMap:Set({MissionMaps[1]})
 			Options.AutoStartObjective:Refresh(MapObjectives[MissionMaps[1]] or {"Skirmish"})
 			Options.AutoStartObjective:Set({(MapObjectives[MissionMaps[1]] or {"Skirmish"})[1]})
-			if RaidTitanLabel then pcall(function() RaidTitanLabel:Set({Content = ""}) end) end
+			if RaidTitanLabel then pcall(function() RaidTitanLabel:Set({Title = "", Content = ""}) end) end
 		else
 			Options.AutoStartMap:Refresh(RaidMaps)
 			Options.AutoStartMap:Set({RaidMaps[1]})
 			Options.AutoStartObjective:Refresh(MapObjectives[RaidMaps[1]] or {"Skirmish"})
 			Options.AutoStartObjective:Set({(MapObjectives[RaidMaps[1]] or {"Skirmish"})[1]})
-			if RaidTitanLabel then pcall(function() RaidTitanLabel:Set({Content = RAID_TITAN_TEXT}) end) end
+			if RaidTitanLabel then pcall(function() RaidTitanLabel:Set({Title = "", Content = RAID_TITAN_TEXT}) end) end
 		end
 	end
 })
 
 Options.AutoStartMap = Tabs.Main:CreateDropdown({
-	Name = "Map",
-	Options = MissionMaps,
-	CurrentOption = {MissionMaps[1]},
-	MultipleOptions = false,
-	Flag = "AutoStartMap",
+	Name = "Map", Options = MissionMaps, CurrentOption = {MissionMaps[1]}, MultipleOptions = false, Flag = "AutoStartMap",
 	Callback = function(Value)
-		local selected = Value[1]
+		local selected = type(Value) == "table" and Value[1] or Value
 		local objectives = MapObjectives[selected] or {"Skirmish"}
 		Options.AutoStartObjective:Refresh(objectives)
 		Options.AutoStartObjective:Set({objectives[1]})
@@ -1304,45 +563,27 @@ Options.AutoStartMap = Tabs.Main:CreateDropdown({
 })
 
 Options.AutoStartObjective = Tabs.Main:CreateDropdown({
-	Name = "Objective",
-	Options = MapObjectives["Shiganshina"],
-	CurrentOption = {MapObjectives["Shiganshina"][1]},
-	MultipleOptions = false,
-	Flag = "AutoStartObjective",
-	Callback = function() end
+	Name = "Objective", Options = MapObjectives["Shiganshina"], CurrentOption = {MapObjectives["Shiganshina"][1]},
+	MultipleOptions = false, Flag = "AutoStartObjective", Callback = function() end
 })
 
 Options.AutoStartDifficulty = Tabs.Main:CreateDropdown({
-	Name = "Difficulty",
-	Options = DifficultyOptions,
-	CurrentOption = {DifficultyOptions[1]},
-	MultipleOptions = false,
-	Flag = "AutoStartDifficulty",
-	Callback = function() end
+	Name = "Difficulty", Options = DifficultyOptions, CurrentOption = {DifficultyOptions[1]},
+	MultipleOptions = false, Flag = "AutoStartDifficulty", Callback = function() end
 })
 
 RaidTitanLabel = Tabs.Main:CreateParagraph({Title = "", Content = ""})
 
 Options.AutoStartModifiers = Tabs.Main:CreateDropdown({
-	Name = "Modifiers",
-	Options = ModifierOptions,
-	CurrentOption = {},
-	MultipleOptions = true,
-	Flag = "AutoStartModifiers",
-	Callback = function() end
+	Name = "Modifiers", Options = ModifierOptions, CurrentOption = {}, MultipleOptions = true,
+	Flag = "AutoStartModifiers", Callback = function() end
 })
 
 Options.MaxRewardModifier = Tabs.Main:CreateToggle({
-	Name = "Max Reward Modifier",
-	CurrentValue = false,
-	Flag = "MaxRewardModifier",
+	Name = "Max Reward Modifier", CurrentValue = false, Flag = "MaxRewardModifier",
 	Callback = function(Value)
 		if Value then
-			Options.AutoStartModifiers:Set({
-				"No Skills", "No Talents", "Nightmare",
-				"Oddball", "Injury Prone", "Chronic Injuries",
-				"Fog", "Glass Canon", "Time Trial"
-			})
+			Options.AutoStartModifiers:Set({"No Skills","No Talents","Nightmare","Oddball","Injury Prone","Chronic Injuries","Fog","Glass Canon","Time Trial"})
 		else
 			Options.AutoStartModifiers:Set({})
 		end
@@ -1355,141 +596,53 @@ Options.MaxRewardModifier = Tabs.Main:CreateToggle({
 
 Tabs.Utility:CreateSection("Combat Settings")
 
-Options.AutoRefill = Tabs.Utility:CreateToggle({
-	Name = "Auto Reload/Refill",
-	CurrentValue = false,
-	Flag = "AutoRefill",
-	Callback = function() end
-})
-
-Options.AutoEscape = Tabs.Utility:CreateToggle({
-	Name = "Auto Escape",
-	CurrentValue = false,
-	Flag = "AutoEscape",
-	Callback = function() end
-})
-
-Options.MultiHit = Tabs.Utility:CreateToggle({
-	Name = "Multi Hit",
-	CurrentValue = false,
-	Flag = "MultiHit",
-	Callback = function() end
-})
-
-Options.TitansPerHit = Tabs.Utility:CreateSlider({
-	Name = "Titans per hit",
-	Range = {1, 20},
-	Increment = 1,
-	Suffix = "",
-	CurrentValue = 3,
-	Flag = "TitansPerHit",
-	Callback = function() end
-})
+Options.AutoRefill  = Tabs.Utility:CreateToggle({ Name = "Auto Reload/Refill", CurrentValue = false, Flag = "AutoRefill",  Callback = function() end })
+Options.AutoEscape  = Tabs.Utility:CreateToggle({ Name = "Auto Escape",        CurrentValue = false, Flag = "AutoEscape",  Callback = function() end })
+Options.MultiHit    = Tabs.Utility:CreateToggle({ Name = "Multi Hit",          CurrentValue = false, Flag = "MultiHit",    Callback = function() end })
+Options.TitansPerHit = Tabs.Utility:CreateSlider({ Name = "Titans per hit", Range = {1,20}, Increment = 1, CurrentValue = 3, Flag = "TitansPerHit", Callback = function() end })
 
 Tabs.Utility:CreateSection("Security")
 
 Options.Failsafe = Tabs.Utility:CreateToggle({
-	Name = "Failsafe",
-	CurrentValue = false,
-	Flag = "Failsafe",
+	Name = "Failsafe", CurrentValue = false, Flag = "Failsafe",
 	Callback = function(Value)
 		if Value then
 			StartFailsafe()
-			Rayfield:Notify({
-				Title = "Failsafe",
-				Content = "Enabled! Will return to lobby after " .. Options.FailsafeTimeout.CurrentValue .. " min of idle time.",
-				Duration = 4
-			})
+			Rayfield:Notify({ Title = "Failsafe", Content = "Enabled! Returns to lobby after " .. Options.FailsafeTimeout.CurrentValue .. " min idle.", Duration = 4 })
 		else
 			StopFailsafe()
-			Rayfield:Notify({Title = "Failsafe", Content = "Disabled.", Duration = 3})
+			Rayfield:Notify({ Title = "Failsafe", Content = "Disabled.", Duration = 3 })
 		end
 	end
 })
 
 Options.FailsafeTimeout = Tabs.Utility:CreateSlider({
-	Name = "Timeout",
-	Range = {1, 20},
-	Increment = 1,
-	Suffix = " min",
-	CurrentValue = 10,
-	Flag = "FailsafeTimeout",
+	Name = "Timeout", Range = {1,20}, Increment = 1, Suffix = " min", CurrentValue = 10, Flag = "FailsafeTimeout",
 	Callback = function(Value)
 		if Options.Failsafe.CurrentValue then
 			ResetIdleTimer()
-			Rayfield:Notify({Title = "Failsafe", Content = "Timeout updated to " .. Value .. " min. Timer reset.", Duration = 3})
+			Rayfield:Notify({ Title = "Failsafe", Content = "Timeout updated to " .. Value .. " min.", Duration = 3 })
 		end
 	end
 })
 
 Tabs.Utility:CreateSection("Mastery Farm")
 
-Options.TitanMasteryFarm = Tabs.Utility:CreateToggle({
-	Name = "Titan Mastery Farm",
-	CurrentValue = false,
-	Flag = "TitanMasteryFarm",
-	Callback = function() end
-})
-
-Options.MasteryMode = Tabs.Utility:CreateDropdown({
-	Name = "Mastery Mode",
-	Options = {"Both", "ODM", "Titan"},
-	CurrentOption = {"Both"},
-	MultipleOptions = false,
-	Flag = "MasteryMode",
-	Callback = function() end
-})
+Options.TitanMasteryFarm = Tabs.Utility:CreateToggle({ Name = "Titan Mastery Farm", CurrentValue = false, Flag = "TitanMasteryFarm", Callback = function() end })
+Options.MasteryMode = Tabs.Utility:CreateDropdown({ Name = "Mastery Mode", Options = {"Both","ODM","Titan"}, CurrentOption = {"Both"}, MultipleOptions = false, Flag = "MasteryMode", Callback = function() end })
 
 Tabs.Utility:CreateSection("Extras")
 
-Options.AutoSkipCutscenes = Tabs.Utility:CreateToggle({
-	Name = "Auto Skip Cutscenes",
-	CurrentValue = false,
-	Flag = "AutoSkipCutscenes",
-	Callback = function() end
-})
-
-Options.DieAtStreak = Tabs.Utility:CreateToggle({
-	Name = "Die at Streak",
-	CurrentValue = false,
-	Flag = "DieAtStreak",
-	Callback = function() end
-})
-
-Options.DieAtXStreak = Tabs.Utility:CreateSlider({
-	Name = "Die at x streak",
-	Range = {5000, 100000},
-	Increment = 1,
-	Suffix = "",
-	CurrentValue = 10000,
-	Flag = "DieAtXStreak",
-	Callback = function() end
-})
-
-Options.AutoOpenChests = Tabs.Utility:CreateToggle({
-	Name = "Auto Open Chests",
-	CurrentValue = false,
-	Flag = "AutoOpenChests",
-	Callback = function() end
-})
-
-Options.AutoOpen2ndChest = Tabs.Utility:CreateToggle({
-	Name = "Auto Open 2nd Chest",
-	CurrentValue = false,
-	Flag = "AutoOpen2ndChest",
-	Callback = function() end
-})
+Options.AutoSkipCutscenes = Tabs.Utility:CreateToggle({ Name = "Auto Skip Cutscenes",  CurrentValue = false, Flag = "AutoSkipCutscenes", Callback = function() end })
+Options.DieAtStreak       = Tabs.Utility:CreateToggle({ Name = "Die at Streak",         CurrentValue = false, Flag = "DieAtStreak",       Callback = function() end })
+Options.DieAtXStreak      = Tabs.Utility:CreateSlider({ Name = "Die at x streak", Range = {5000,100000}, Increment = 1, CurrentValue = 10000, Flag = "DieAtXStreak", Callback = function() end })
+Options.AutoOpenChests    = Tabs.Utility:CreateToggle({ Name = "Auto Open Chests",      CurrentValue = false, Flag = "AutoOpenChests",    Callback = function() end })
+Options.AutoOpen2ndChest  = Tabs.Utility:CreateToggle({ Name = "Auto Open 2nd Chest",   CurrentValue = false, Flag = "AutoOpen2ndChest",  Callback = function() end })
 
 Options.DeleteMap = Tabs.Utility:CreateToggle({
-	Name = "Delete Map (FPS Boost)",
-	CurrentValue = false,
-	Flag = "DeleteMap",
+	Name = "Delete Map (FPS Boost)", CurrentValue = false, Flag = "DeleteMap",
 	Callback = function(Value)
-		if Value then
-			DeleteMap()
-		else
-			RestoreMap()
-		end
+		if Value then DeleteMap() else RestoreMap() end
 	end
 })
 
@@ -1499,123 +652,32 @@ Options.DeleteMap = Tabs.Utility:CreateToggle({
 
 Tabs.Global:CreateSection("Family Roll")
 
-Options.AutoRoll = Tabs.Global:CreateToggle({
-	Name = "Auto Roll",
-	CurrentValue = false,
-	Flag = "AutoRoll",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
-
-Options.SelectFamilies = Tabs.Global:CreateDropdown({
-	Name = "Select Families",
-	Options = {"Yeager", "Ackerman", "Reiss", "Helos", "Fritz", "Shiki"},
-	CurrentOption = {},
-	MultipleOptions = true,
-	Flag = "SelectFamilies",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
-
-Options.StopAt = Tabs.Global:CreateDropdown({
-	Name = "Stop At",
-	Options = {"Legendary", "Mythic", "Secret"},
-	CurrentOption = {},
-	MultipleOptions = true,
-	Flag = "StopAt",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
+Options.AutoRoll = Tabs.Global:CreateToggle({ Name = "Auto Roll", CurrentValue = false, Flag = "AutoRoll", Callback = function() end })
+Options.SelectFamilies = Tabs.Global:CreateDropdown({ Name = "Select Families", Options = {"Yeager","Ackerman","Reiss","Helos","Fritz","Shiki"}, CurrentOption = {}, MultipleOptions = true, Flag = "SelectFamilies", Callback = function() end })
+Options.StopAt = Tabs.Global:CreateDropdown({ Name = "Stop At", Options = {"Legendary","Mythic","Secret"}, CurrentOption = {}, MultipleOptions = true, Flag = "StopAt", Callback = function() end })
 
 Tabs.Global:CreateSection("AddOns")
 
-Options.AutoHideGui = Tabs.Global:CreateToggle({
-	Name = "Auto Hide Gui",
-	CurrentValue = false,
-	Flag = "AutoHideGui",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
-
-Options.AutoClaimAchievements = Tabs.Global:CreateToggle({
-	Name = "Auto Claim Achievements",
-	CurrentValue = false,
-	Flag = "AutoClaimAchievements",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
+Options.AutoHideGui          = Tabs.Global:CreateToggle({ Name = "Auto Hide Gui",           CurrentValue = false, Flag = "AutoHideGui",          Callback = function() end })
+Options.AutoClaimAchievements= Tabs.Global:CreateToggle({ Name = "Auto Claim Achievements", CurrentValue = false, Flag = "AutoClaimAchievements", Callback = function() end })
 
 Options.Disable3DRendering = Tabs.Global:CreateToggle({
-	Name = "Disable 3D Rendering",
-	CurrentValue = false,
-	Flag = "Disable3DRendering",
+	Name = "Disable 3D Rendering", CurrentValue = false, Flag = "Disable3DRendering",
 	Callback = function(Value)
-		if Value then
-			Disable3DRendering()
-		else
-			Enable3DRendering()
-		end
+		if Value then Disable3DRendering() else Enable3DRendering() end
 	end
 })
 
 Tabs.Global:CreateSection("Webhook")
 
-Options.RewardWebhook = Tabs.Global:CreateToggle({
-	Name = "Reward Webhook",
-	CurrentValue = false,
-	Flag = "RewardWebhook",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
-
-Options.MythicFamilyWebhook = Tabs.Global:CreateToggle({
-	Name = "Mythic Family Webhook",
-	CurrentValue = false,
-	Flag = "MythicFamilyWebhook",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
-
-Options.WebhookURL = Tabs.Global:CreateInput({
-	Name = "Webhook URL",
-	CurrentValue = "",
-	PlaceholderText = "https://discord.com/api/webhooks/...",
-	RemoveTextAfterFocusLost = false,
-	Flag = "WebhookURL",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
+Options.RewardWebhook      = Tabs.Global:CreateToggle({ Name = "Reward Webhook",       CurrentValue = false, Flag = "RewardWebhook",      Callback = function() end })
+Options.MythicFamilyWebhook= Tabs.Global:CreateToggle({ Name = "Mythic Family Webhook",CurrentValue = false, Flag = "MythicFamilyWebhook", Callback = function() end })
+Options.WebhookURL         = Tabs.Global:CreateInput({ Name = "Webhook URL", CurrentValue = "", PlaceholderText = "https://discord.com/api/webhooks/...", RemoveTextAfterFocusLost = false, Flag = "WebhookURL", Callback = function() end })
 
 Tabs.Global:CreateSection("Level")
 
-Options.AutoPrestige = Tabs.Global:CreateToggle({
-	Name = "Auto Prestige",
-	CurrentValue = false,
-	Flag = "AutoPrestige",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
-
-Options.PrestigeAt = Tabs.Global:CreateSlider({
-	Name = "Prestige at (millions)",
-	Range = {1, 1000},
-	Increment = 1,
-	Suffix = "M",
-	CurrentValue = 100,
-	Flag = "PrestigeAt",
-	Callback = function(Value)
-		-- functionality later
-	end
-})
+Options.AutoPrestige = Tabs.Global:CreateToggle({ Name = "Auto Prestige", CurrentValue = false, Flag = "AutoPrestige", Callback = function() end })
+Options.PrestigeAt   = Tabs.Global:CreateSlider({ Name = "Prestige at (millions)", Range = {1,1000}, Increment = 1, Suffix = "M", CurrentValue = 100, Flag = "PrestigeAt", Callback = function() end })
 
 -- ========================
 --      SETTINGS TAB
@@ -1623,26 +685,16 @@ Options.PrestigeAt = Tabs.Global:CreateSlider({
 
 Tabs.Settings:CreateSection("Menu")
 
-Tabs.Settings:CreateKeybind({
-	Name = "Menu bind",
-	CurrentKeybind = "RightShift",
-	HoldToInteract = false,
-	Flag = "MenuKeybind",
-	Callback = function(Keybind) end
-})
+Tabs.Settings:CreateKeybind({ Name = "Menu bind", CurrentKeybind = "RightShift", HoldToInteract = false, Flag = "MenuKeybind", Callback = function() end })
 
 Tabs.Settings:CreateButton({
 	Name = "Unload",
 	Callback = function()
 		StopFailsafe()
-		if Options.DeleteMap and Options.DeleteMap.CurrentValue then
-			RestoreMap()
-		end
+		if Options.DeleteMap and Options.DeleteMap.CurrentValue then RestoreMap() end
 		Enable3DRendering()
 		for _, gui in ipairs(game:GetService("CoreGui"):GetChildren()) do
-			if gui.Name == "Rayfield" then
-				gui:Destroy()
-			end
+			if gui.Name == "Rayfield" then gui:Destroy() end
 		end
 		print("Unloaded!")
 	end
@@ -1651,95 +703,35 @@ Tabs.Settings:CreateButton({
 Tabs.Settings:CreateSection("Auto Execute")
 
 Options.AutoExecEnabled = Tabs.Settings:CreateToggle({
-	Name = "Auto Execute",
-	CurrentValue = false,
-	Flag = "AutoExecEnabled",
+	Name = "Auto Execute", CurrentValue = false, Flag = "AutoExecEnabled",
 	Callback = function(Value)
 		if Value then
-			-- Build the script string that should re-run after teleport
-			local scriptString = string.format(
-				'loadstring(game:HttpGet("%s"))()',
-				HUB_SCRIPT_URL
-			)
-
-			-- Try multiple executor APIs
-			local ok, err = pcall(function()
-				if type(queue_on_teleport) == "function" then
-					queue_on_teleport(scriptString)
-				elseif type(syn) == "table" and type(syn.queue_on_teleport) == "function" then
-					syn.queue_on_teleport(scriptString)
-				elseif type(fluxus) == "table" and type(fluxus.queue_on_teleport) == "function" then
-					fluxus.queue_on_teleport(scriptString)
-				elseif type(getgenv().queue_on_teleport) == "function" then
-					getgenv().queue_on_teleport(scriptString)
-				else
-					error("Executor does not support queue_on_teleport")
-				end
-			end)
-
-			if ok then
-				Rayfield:Notify({
-					Title = "Auto Execute",
-					Content = "Enabled! Hub will reload on next teleport.",
-					Duration = 4
-				})
-			else
-				Rayfield:Notify({
-					Title = "Auto Execute Error",
-					Content = "Your executor doesn't support queue_on_teleport.",
-					Duration = 4
-				})
-				-- Turn the toggle back off safely
-				task.delay(0.1, function()
-					Options.AutoExecEnabled:Set(false)
-				end)
+			local ok = QueueOnTeleport('loadstring(game:HttpGet("' .. HUB_SCRIPT_URL .. '"))()')
+			Rayfield:Notify({
+				Title = "Auto Execute",
+				Content = ok and "Enabled! Hub will reload on next teleport." or "Your executor doesn't support queue_on_teleport.",
+				Duration = 4
+			})
+			if not ok then
+				task.delay(0.1, function() Options.AutoExecEnabled:Set(false) end)
 			end
 		else
-			Rayfield:Notify({Title = "Auto Execute", Content = "Disabled.", Duration = 3})
+			Rayfield:Notify({ Title = "Auto Execute", Content = "Disabled.", Duration = 3 })
 		end
-	end
-})
-
-Tabs.Settings:CreateSection("Theme")
-
-Options.ThemeSelector = Tabs.Settings:CreateDropdown({
-	Name = "UI Theme",
-	Options = {"Default", "DarkRed", "Ocean", "Midnight", "Forest", "Sunset", "AOT Green"},
-	CurrentOption = {"Default"},
-	MultipleOptions = false,
-	Flag = "ThemeSelector",
-	Callback = function(Value)
-		local selected = Value[1]
-		SetRayfieldTheme(selected)
 	end
 })
 
 Tabs.Settings:CreateSection("Config Manager")
 
-ConfigNameInput = Tabs.Settings:CreateInput({
-	Name = "Config Name",
-	CurrentValue = "",
-	PlaceholderText = "Enter name...",
-	RemoveTextAfterFocusLost = false,
-	Flag = "ConfigNameInput",
-	Callback = function() end
-})
+ConfigNameInput = Tabs.Settings:CreateInput({ Name = "Config Name", CurrentValue = "", PlaceholderText = "Enter name...", RemoveTextAfterFocusLost = false, Flag = "ConfigNameInput", Callback = function() end })
 
 Tabs.Settings:CreateButton({
 	Name = "💾 Save Config",
 	Callback = function()
 		local name = ConfigNameInput.CurrentValue
-		if not name or ConfigSystem:CleanName(name) == "" then
-			Rayfield:Notify({Title = "Config Manager", Content = "Enter a config name first!", Duration = 3})
-			return
-		end
+		if not name or ConfigSystem:CleanName(name) == "" then Rayfield:Notify({Title="Config Manager",Content="Enter a config name first!",Duration=3}) return end
 		local ok, err = ConfigSystem:Save(name)
-		if ok then
-			Rayfield:Notify({Title = "Config Saved", Content = '"' .. ConfigSystem:CleanName(name) .. '" saved!', Duration = 3})
-		else
-			Rayfield:Notify({Title = "Save Failed", Content = tostring(err), Duration = 4})
-		end
-
+		Rayfield:Notify({ Title = ok and "Config Saved" or "Save Failed", Content = ok and '"'..ConfigSystem:CleanName(name)..'" saved!' or tostring(err), Duration = 3 })
 		local list = ConfigSystem:List()
 		ConfigLoadDropdown:Refresh(list)
 		ConfigAutoloadDropdown:Refresh(list)
@@ -1752,26 +744,13 @@ Tabs.Settings:CreateButton({
 		local name = ConfigNameInput.CurrentValue
 		if not name or ConfigSystem:CleanName(name) == "" then
 			local selected = ConfigLoadDropdown.CurrentOption
-			if selected and selected[1] then
-				name = selected[1]
-			else
-				Rayfield:Notify({Title = "Config Manager", Content = "Enter a name or select from Load Config!", Duration = 3})
-				return
-			end
+			if selected and selected[1] then name = selected[1]
+			else Rayfield:Notify({Title="Config Manager",Content="Enter a name or select from Load Config!",Duration=3}) return end
 		end
 		local clean = ConfigSystem:CleanName(name)
-		local exactPath = ConfigSystem:FindFileExact(clean)
-		if not exactPath then
-			Rayfield:Notify({Title = "Config Manager", Content = '"' .. clean .. '" does not exist. Use Save first.', Duration = 3})
-			return
-		end
+		if not ConfigSystem:FindFileExact(clean) then Rayfield:Notify({Title="Config Manager",Content='"'..clean..'" does not exist. Use Save first.',Duration=3}) return end
 		local ok, err = ConfigSystem:Save(clean)
-		if ok then
-			Rayfield:Notify({Title = "Config Overwritten", Content = '"' .. clean .. '" updated!', Duration = 3})
-		else
-			Rayfield:Notify({Title = "Overwrite Failed", Content = tostring(err), Duration = 4})
-		end
-
+		Rayfield:Notify({ Title = ok and "Config Overwritten" or "Overwrite Failed", Content = ok and '"'..clean..'" updated!' or tostring(err), Duration = 3 })
 		local list = ConfigSystem:List()
 		ConfigLoadDropdown:Refresh(list)
 		ConfigAutoloadDropdown:Refresh(list)
@@ -1779,36 +758,22 @@ Tabs.Settings:CreateButton({
 })
 
 ConfigLoadDropdown = Tabs.Settings:CreateDropdown({
-	Name = "📂 Load Config",
-	Options = ConfigSystem:List(),
-	CurrentOption = {},
-	MultipleOptions = false,
-	Flag = "ConfigLoadDropdown",
+	Name = "📂 Load Config", Options = ConfigSystem:List(), CurrentOption = {}, MultipleOptions = false, Flag = "ConfigLoadDropdown",
 	Callback = function(Value)
-		local name = Value[1]
+		local name = type(Value) == "table" and Value[1] or Value
 		if not name then return end
-		
 		local ok, loaded, failed = ConfigSystem:Load(name)
-		if ok then
-			Rayfield:Notify({Title = "Config Loaded", Content = '"' .. name .. '" loaded! (' .. tostring(loaded) .. ' settings)', Duration = 3})
-		else
-			Rayfield:Notify({Title = "Config Error", Content = tostring(loaded), Duration = 8})
-		end
+		Rayfield:Notify({ Title = ok and "Config Loaded" or "Config Error", Content = ok and '"'..name..'" loaded! ('..tostring(loaded)..' settings)' or tostring(loaded), Duration = ok and 3 or 8 })
 	end
 })
 
 ConfigAutoloadDropdown = Tabs.Settings:CreateDropdown({
-	Name = "🔄 Autoload Config",
-	Options = ConfigSystem:List(),
-	CurrentOption = {},
-	MultipleOptions = false,
-	Flag = "ConfigAutoloadDropdown",
+	Name = "🔄 Autoload Config", Options = ConfigSystem:List(), CurrentOption = {}, MultipleOptions = false, Flag = "ConfigAutoloadDropdown",
 	Callback = function(Value)
-		local name = Value[1]
+		local name = type(Value) == "table" and Value[1] or Value
 		if not name then return end
-		
 		ConfigSystem:SetAutoload(name)
-		Rayfield:Notify({Title = "Autoload Set", Content = '"' .. name .. '" will autoload next time.', Duration = 3})
+		Rayfield:Notify({ Title = "Autoload Set", Content = '"'..name..'" will autoload next time.', Duration = 3 })
 	end
 })
 
@@ -1817,7 +782,58 @@ Tabs.Settings:CreateButton({
 	Callback = function()
 		ConfigSystem:ResetAutoload()
 		pcall(function() ConfigAutoloadDropdown:Set({}) end)
-		Rayfield:Notify({Title = "Autoload", Content = "Autoload has been reset.", Duration = 3})
+		Rayfield:Notify({ Title = "Autoload", Content = "Autoload has been reset.", Duration = 3 })
+	end
+})
+
+-- Remote Spy using hookmetamethod (proper executor method)
+local remoteSpy = false
+local spyHook = nil
+
+local POST = ReplicatedStorage:FindFirstChild("Assets")
+	and ReplicatedStorage.Assets:FindFirstChild("Remotes")
+	and ReplicatedStorage.Assets.Remotes:FindFirstChild("POST")
+
+Tabs.Settings:CreateButton({
+	Name = "🔍 Remote Spy (Toggle)",
+	Callback = function()
+		remoteSpy = not remoteSpy
+
+		if remoteSpy then
+			if not hookmetamethod then
+				Rayfield:Notify({ Title = "Remote Spy", Content = "hookmetamethod not supported by your executor.", Duration = 4 })
+				remoteSpy = false
+				return
+			end
+
+			spyHook = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+				local method = getnamecallmethod()
+				if (method == "FireServer" or method == "InvokeServer") and self == POST then
+					local args = {...}
+					print("=== ZANGETSU SPY: POST:" .. method .. " ===")
+					for i, v in ipairs(args) do
+						if type(v) == "table" then
+							print("  Arg[" .. i .. "] table:")
+							for k, val in pairs(v) do
+								print("    " .. tostring(k) .. " = " .. tostring(val))
+							end
+						else
+							print("  Arg[" .. i .. "] = " .. tostring(v))
+						end
+					end
+					print("========================================")
+				end
+				return spyHook(self, ...)
+			end))
+
+			Rayfield:Notify({ Title = "Remote Spy", Content = "ON! Manually start a game now — check console.", Duration = 5 })
+		else
+			if spyHook then
+				hookmetamethod(game, "__namecall", spyHook)
+				spyHook = nil
+			end
+			Rayfield:Notify({ Title = "Remote Spy", Content = "OFF.", Duration = 3 })
+		end
 	end
 })
 
@@ -1825,13 +841,9 @@ Tabs.Settings:CreateButton({
 	Name = "🗑️ Delete Config",
 	Callback = function()
 		local name = ConfigNameInput.CurrentValue
-		if not name or ConfigSystem:CleanName(name) == "" then
-			Rayfield:Notify({Title = "Config Manager", Content = "Enter the config name to delete!", Duration = 3})
-			return
-		end
+		if not name or ConfigSystem:CleanName(name) == "" then Rayfield:Notify({Title="Config Manager",Content="Enter the config name to delete!",Duration=3}) return end
 		ConfigSystem:Delete(name)
-		Rayfield:Notify({Title = "Config Deleted", Content = '"' .. ConfigSystem:CleanName(name) .. '" deleted.', Duration = 3})
-
+		Rayfield:Notify({ Title = "Config Deleted", Content = '"'..ConfigSystem:CleanName(name)..'" deleted.', Duration = 3 })
 		local list = ConfigSystem:List()
 		ConfigLoadDropdown:Refresh(list)
 		ConfigAutoloadDropdown:Refresh(list)
@@ -1839,22 +851,10 @@ Tabs.Settings:CreateButton({
 })
 
 -- ========================
---   CLEANUP & LOAD
+--   AUTOLOAD ON START
 -- ========================
 
--- Apply saved theme on load
-task.delay(1, function()
-	local savedTheme = Options.ThemeSelector and Options.ThemeSelector.CurrentValue
-	if savedTheme and savedTheme[1] and savedTheme[1] ~= "Default" then
-		SetRayfieldTheme(savedTheme[1])
-	end
-end)
-
--- ROBUST AUTOLOAD (runs exactly once)
-local hasAutoloaded = false
-
 task.spawn(function()
-	-- Wait until Rayfield has built all Options
 	local ready = false
 	for i = 1, 60 do
 		local count = 0
@@ -1862,55 +862,17 @@ task.spawn(function()
 		if count >= 10 then ready = true; break end
 		task.wait(0.5)
 	end
-	if not ready then
-		warn("[ZangetsuHub] Autoload timeout.")
-		return
-	end
-
-	-- Prevent double-loading
-	if hasAutoloaded then return end
-	hasAutoloaded = true
+	if not ready then return end
 
 	local autoload = ConfigSystem:GetAutoload()
 	if not autoload then return end
 
-	local ok, loaded, failed = ConfigSystem:Load(autoload)
+	local ok, loaded = ConfigSystem:Load(autoload)
 	if ok then
-		-- Force UI refresh only for elements that need it (avoid re-triggering callbacks)
-		for flag, option in pairs(Options) do
-			if option and option.CurrentValue ~= nil and option.Set then
-				pcall(function()
-					option:Set(option.CurrentValue)
-				end)
-			end
-		end
-		
-		Rayfield:Notify({
-			Title = "✅ Config Autoloaded",
-			Content = '"' .. autoload .. '" loaded! (' .. tostring(loaded) .. ' settings)',
-			Duration = 5
-		})
-		
-		-- Update dropdown visuals without triggering their Callbacks
-		pcall(function()
-			if ConfigLoadDropdown then
-				ConfigLoadDropdown.CurrentOption = {autoload}
-			end
-			if ConfigAutoloadDropdown then
-				ConfigAutoloadDropdown.CurrentOption = {autoload}
-			end
-		end)
+		Rayfield:Notify({ Title = "✅ Config Autoloaded", Content = '"'..autoload..'" loaded! ('..tostring(loaded)..' settings)', Duration = 5 })
 	else
-		Rayfield:Notify({
-			Title = "❌ Autoload Failed",
-			Content = tostring(loaded),
-			Duration = 10
-		})
+		Rayfield:Notify({ Title = "❌ Autoload Failed", Content = tostring(loaded), Duration = 10 })
 	end
 end)
 
-Rayfield:Notify({
-	Title = "Zangetsu Hub",
-	Content = "Rayfield UI loaded successfully!",
-	Duration = 5
-})
+Rayfield:Notify({ Title = "Zangetsu Hub", Content = "Loaded successfully!", Duration = 4 })
